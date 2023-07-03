@@ -1,0 +1,39 @@
+# Setup
+title:               COOLnNICEBLOG
+tagline:             less nerd, more cool n nice
+url:                 https://blog.defcesco.io
+analytics_id:        
+
+# About/contact
+author:
+  name:                austin a. defrancesco
+  email:               "austin[@]defcesco[.]io"
+  avatar:              img/avatar.jpg 
+  profile-pic:         img/profile-pic.jpg
+
+
+
+# Build settings
+markdown:            kramdown
+permalink:           /:title
+sass:
+  sass_dir:          _sass
+  style:            :compressed
+
+
+# Default settings
+defaults:
+  -
+    scope:
+      path: "" 
+      type: "posts" 
+    values:
+      layout: "post"
+      author: austin a. defrancesco
+  -
+    scope:
+      path: "" 
+      type: "pages" 
+    values:
+      layout: "page"
+      
