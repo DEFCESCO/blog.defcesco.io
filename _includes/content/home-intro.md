@@ -1,4 +1,4 @@
 
 # [BRIDGEBLOG](/)
 
-Bridging nerdy stuff to be elegant and pleasant
+## Bridging nerdy stuff to pursue pleasant elegance
