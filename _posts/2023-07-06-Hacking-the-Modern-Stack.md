@@ -1,5 +1,5 @@
 ---
-title: Hacking the Modern Stack: A Journey through Stored XSS, Redis Cache Poisoning, and Pickle Deserialization in the NEOCC Capture the Flag Tournament
+title: Hacking the Modern Stack | A Journey through Stored XSS, Redis Cache Poisoning, and Pickle Deserialization in the NEOCC Capture the Flag Tournament
 ---
 
 ## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF
