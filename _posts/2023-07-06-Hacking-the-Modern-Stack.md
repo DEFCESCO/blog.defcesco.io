@@ -5,7 +5,12 @@ title: "Hacking the Modern Stack: A Journey through Stored XSS, Redis Cache Pois
 # Table of Contents
 1. [Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF](#introduction)
 2. [Recon & Enumeration: Figuring Out How the Application Works](#recon)
-3. [Third Example](#third-example)
+3. [Examining the Flow of Information into the Application: Understanding How Data Enters the System](#flow)
+4. [Exploring the Possibilities of Executing Arbitrary JavaScript as ADMIN](#exploring-xss)
+5. [Using Redis Gopher as the SSRF Mechanism to Cache Poison the Redis Cache](#ssrf)
+6. [Chaining Payloads: From Pickle Deserialization to Redis Cache Poisoning to Game Over](#game-over)
+7. [Remediation Recommendations](#remediation)
+8. [Summary](#summary)
 
 ## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF <a name="introduction"></a>
 
@@ -118,7 +123,7 @@ From the information provided about the application's build files, we can gather
 
 So let’s begin our comprehensive review of the complete application.
 
-## Examining the Flow of Information into the Application: Understanding How Data Enters the System
+## Examining the Flow of Information into the Application: Understanding How Data Enters the System <a name="flow"></a>
 
 Analyzing the application's core files, namely `/challenge/application/main.py` and `/challenge/run.py`, provides insights into how information flows into the application. Let's delve into each of these files:
 
@@ -442,7 +447,7 @@ I confirmed this XSS using an ephemeral webhook at [https://webhook.site](https:
 
 Success! *By the way, I've used "Web bug / URL token," [CanaryTokens](https://www.canarytokens.org/generate#), in the past, but there are a few minutes of delay to receive an email stating that your token has triggered; webhooks are much faster and provide additional curious information like HTTP headers such as `referer`. Webhooks have become widely used for receiving immediate notifications and triggering actions based on specific events. They offer flexibility and use in various applications, including security monitoring, integrations, and real-time data processing.*
 
-## Exploring the Possibilities of Executing Arbitrary JavaScript as ADMIN
+## Exploring the Possibilities of Executing Arbitrary JavaScript as ADMIN <a name="exploring-xss"></a>
 
 In the **`routes.py`** file, we encounter an API endpoint **`/admin/scrape`** associated with the **`scrape_list()`** function. Let's analyze the code snippet:
 
@@ -604,7 +609,7 @@ def get_job_queue(job_id):
 
 Our snag to injecting our code is that the application serializes the data then encodes the data in base64. Therefore, attempting to inject our serialized gadget chain to execute code directly, and execute code directly within the serialized data will not work as expected due to the double encoding and subsequent deserialization. Yikes; we’re going to have to find another way to cause our scrape job to be processed by Redis. 
 
-## Using Redis Gopher as the SSRF Mechanism to Cache Poison the Redis Cache
+## Using Redis Gopher as the SSRF Mechanism to Cache Poison the Redis Cache <a name="ssrf"></a>
 
 I zoomed out and went back to our Recon & Enumeration phase. I reviewed my notes and looked at the project's `tree` output. Understanding that we need to learn more about the processing of job data, I went to look at the `\challenge\worker\main.py` file:
 
@@ -766,7 +771,7 @@ gopherPayload = "gopher://127.0.0.1:6379/_%s" % redis_cmd.replace('\r','').repla
 print(gopherPayload)
 ```
 
-## Chaining Payloads: From Pickle Deserialization to Redis Cache Poisoning to Game Over
+## Chaining Payloads: From Pickle Deserialization to Redis Cache Poisoning to Game Over <a name="game-over"></a>
 
 First things first, we need to take Rayhan0x01’s payload, add in our Pickle deserialization, then tell Redis to cache the payload: 
 
@@ -861,7 +866,7 @@ I failed to use XSS directly to insert the job into Redis; the browser cannot in
 - My exploit utilizing SSRF isn't as invasive; when the browser has set `windows.location`, the victim's browser has been set to something they don't expect. When the SSRF is in use, we make the user session appear that nothing happened; therefore, graphically, in the background, the victim wouldn't understand that any exploitation has happened. This methodology is optimal for a red team operator.
 - Also, as a Red team operator, we don’t know if everyone has access to the Redis server, but we see that the web server needs to interact with the backend. SSRF guarantees that our interaction with the Redis server will be a success.
 
-## Remediation Recommendations
+## Remediation Recommendations <a name="remediation"></a>
 
 ### Stored cross-site scripting (XSS)
 
@@ -877,7 +882,7 @@ I failed to use XSS directly to insert the job into Redis; the browser cannot in
 1. Assuming that XSS and Redis cache poisoning is still in place, a cryptographic signature is required. The cryptographic signature uses a secret that only the server knows; this signature validates the stored data in Redis. During validation, if the stored data is present but is invalid because the secret key wasn't known, the data should not be processed.
 2. Not applicable in this case, but in other languages, you would use a binder to validate user input; Python doesn't support binders.
 
-## Summary
+## Summary <a name="summary"></a>
 
 I did my job and won us the NEOCC CTF. 🏆
 
