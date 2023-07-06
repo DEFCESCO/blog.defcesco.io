@@ -871,7 +871,7 @@ Grab the flag out of your webhook response and decode it! Good game! If you run 
 I failed to use XSS directly to insert the job into Redis; the browser cannot interact with the Gopher protocol. Please refer to the [Wikipedia section](https://en.wikipedia.org/wiki/Gopher_(protocol)) of browsers that support the Gopher Protocol under “Client Software” > “ Gopher Clients.” The susceptible user must use an obscure Gopher extension for modern browsers.
 
 - My exploit utilizing SSRF isn't as invasive; when the browser has set `windows.location`, the victim's browser has been set to something they don't expect. When the SSRF is in use, we make the user session appear that nothing happened; therefore, graphically, in the background, the victim wouldn't understand that any exploitation has happened. This methodology is optimal for a red team operator.
-- Also, as a Red team operator, we don’t know if everyone has access to the Redis server, but we see that the web server needs to interact with the backend. SSRF guarantees that our interaction with the Redis server will be a success.
+- Also, as a red team operator, we don’t know if everyone has access to the Redis server, but we see that the web server needs to interact with the backend. SSRF guarantees that our interaction with the Redis server will be a success.
 
 ## Remediation Recommendations <a name="remediation"></a>
 
