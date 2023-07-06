@@ -1,12 +1,12 @@
 # Setup
-title:               COOLnNICEBLOG
-tagline:             less nerd, more cool n nice
+title:               BRIDGEBLOG
+tagline:             more cool n nice
 url:                 https://blog.defcesco.io
 analytics_id:        
 
 # About/contact
 author:
-  name:                austin a. defrancesco
+  name:                Austin A. DeFrancesco
   email:               "austin[@]defcesco[.]io"
   avatar:              img/avatar.jpg 
   profile-pic:         img/profile-pic.jpg
@@ -29,7 +29,7 @@ defaults:
       type: "posts" 
     values:
       layout: "post"
-      author: austin a. defrancesco
+      author: Austin A. DeFrancesco
   -
     scope:
       path: "" 
