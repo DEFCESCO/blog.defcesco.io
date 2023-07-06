@@ -897,6 +897,6 @@ The most interesting aspects I found were researching the Gopher protocol and le
 
 **Thanks!** Thanks to you, dear reader; I hope this walkthrough has given you some value. Since the CTF has concluded, I have provided a copy of the challenge and my solutions so you can follow along with this walkthrough. :-)
 
-[web_scrapeware.zip](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/60f51e92-2bb5-4769-a2af-002c0fe6d414/web_scrapeware.zip)
+[web_scrapeware.zip](/_posts/hacking_the_modern_stack_challenge/web_scrapeware.zip)
 
 If you like this content, please consider subscribing to [my RSS feed](https://blog.defcesco.io/).
