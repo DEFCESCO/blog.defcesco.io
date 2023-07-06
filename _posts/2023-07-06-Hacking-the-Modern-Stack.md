@@ -7,7 +7,7 @@ title: "Hacking the Modern Stack: A Journey through Stored XSS, Redis Cache Pois
 2. [Recon & Enumeration: Figuring Out How the Application Works](#recon)
 3. [Third Example](#third-example)
 
-## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF <a> name="introduction"</a>
+## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF <a name="introduction"></a>
 
 Semi-annually, the North East Ohio Cybersecurity Consortium ([https://neocc.us/](https://neocc.us/)) hosts a half-day capture the flag (CTF) tournament for consortium members.
 
@@ -25,7 +25,7 @@ At a high level, the web application had three issues. When chained together, I 
 
 Screenshot of the application’s main page.
 
-## **Recon & Enumeration: Figuring Out How the Application Works**
+## **Recon & Enumeration: Figuring Out How the Application Works**<a name="recon"></a>
 
 Before downloading the source code and building the Docker image, I conducted recon and enumerate to understand the web application better.
 
