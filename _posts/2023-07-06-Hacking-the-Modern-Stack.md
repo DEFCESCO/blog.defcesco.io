@@ -2,9 +2,14 @@
 title: "Hacking the Modern Stack: A Journey through Stored XSS, Redis Cache Poisoning, and Pickle Deserialization in the NEOCC Capture the Flag Tournament"
 ---
 
+# Table of Contents
+1. [Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF](#Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF)
+2. [Recon & Enumeration: Figuring Out How the Application Works](#Recon & Enumeration: Figuring Out How the Application Works)
+3. [Third Example](#third-example)
+
 ## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF
 
-Semi-annually, the North East Ohio Cybersecurity Consortium (**[https://neocc.us/**](https://neocc.us/**)) hosts a half-day capture the flag (CTF) tournament for consortium members.
+Semi-annually, the North East Ohio Cybersecurity Consortium ([https://neocc.us/](https://neocc.us/)) hosts a half-day capture the flag (CTF) tournament for consortium members.
 
 While my team worked through the 12 Easy and Medium challenges, I spent the tournament assessing the Hard Web Application challenge, “Scrapeware.” Of the 26 Ohio-based corporations and 106 players, I was the only one to solve the challenge. The points earned from that challenge tipped our team into first place, securing our victory in the CTF!
 
