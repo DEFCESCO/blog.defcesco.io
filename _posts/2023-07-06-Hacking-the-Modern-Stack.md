@@ -3,11 +3,11 @@ title: "Hacking the Modern Stack: A Journey through Stored XSS, Redis Cache Pois
 ---
 
 # Table of Contents
-1. [Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF](#Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF)
-2. [Recon & Enumeration: Figuring Out How the Application Works](#Recon & Enumeration: Figuring Out How the Application Works)
+1. [Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF](#introduction)
+2. [Recon & Enumeration: Figuring Out How the Application Works](#recon)
 3. [Third Example](#third-example)
 
-## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF
+## Conquering the Scrapeware Challenge and Securing Victory in the NEOCC CTF <a> name="introduction"</a>
 
 Semi-annually, the North East Ohio Cybersecurity Consortium ([https://neocc.us/](https://neocc.us/)) hosts a half-day capture the flag (CTF) tournament for consortium members.
 
