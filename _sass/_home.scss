@@ -29,7 +29,7 @@
   
   .avatar {
     float: right;
-    max-width: 25%;
+    max-width: 60%;
     border: 3px solid $img-border-color;
     @include box-shadow(1px -1px 6px 1px $img-shadow-color);
     @include border-radius(15%);
