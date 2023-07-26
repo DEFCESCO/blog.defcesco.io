@@ -16,7 +16,7 @@ title: "Hacking the Modern Stack: A Journey through Stored XSS, Redis Cache Pois
 
 Semi-annually, the North East Ohio Cybersecurity Consortium ([https://neocc.us/](https://neocc.us/)) hosts a half-day capture the flag (CTF) tournament for consortium members.
 
-While my team worked through the 12 Easy and Medium challenges, I spent the tournament assessing the Hard Web Application challenge, “Scrapeware.” Of the 26 Ohio-based corporations and 106 players, I was the only one to solve the challenge. The points earned from that challenge tipped our team into first place, securing our victory in the CTF!
+While my team worked through the 12 Easy and Medium challenges, I spent the tournament assessing the Hard Web Application challenge, "Scrapeware." Of the 26 Ohio-based corporations and 106 players, I was the only one to solve the challenge. The points earned from that challenge tipped our team into first place, securing our victory in the CTF!
 
 In this blog post, I aim to demonstrate the assessment methodology and provide a walkthrough of my proof of concept that solved the challenge.
 
@@ -530,7 +530,7 @@ sqlite> SELECT password FROM user;
 ```
 *Connecting to our Docker container using bash; running a find command to find our database file; navigating to our database file; connecting to the database file with sqlite3 command line interface; listing the tables for the database and schema for the user table; selecting the password from the user table.*
 
-Now that we have access to the admin portal, let’s click on “Scrape”: 
+Now that we have access to the admin portal, let’s click on "Scrape": 
 
 ![Untitled](/img/Hacking_the_Modern_Stack/Untitled%206.png)
 
@@ -868,7 +868,7 @@ Grab the flag out of your webhook response and decode it! Good game! If you run 
 
 ## Attempting to Potentize the Exploit
 
-I failed to use XSS directly to insert the job into Redis; the browser cannot interact with the Gopher protocol. Please refer to the [Wikipedia section](https://en.wikipedia.org/wiki/Gopher_(protocol)) of browsers that support the Gopher Protocol under “Client Software” > “ Gopher Clients.” The susceptible user must use an obscure Gopher extension for modern browsers.
+I failed to use XSS directly to insert the job into Redis; the browser cannot interact with the Gopher protocol. Please refer to the [Wikipedia section](https://en.wikipedia.org/wiki/Gopher_(protocol)) of browsers that support the Gopher Protocol under "Client Software" > "Gopher Clients." The susceptible user must use an obscure Gopher extension for modern browsers.
 
 - My exploit utilizing SSRF isn't as invasive; when the browser has set `windows.location`, the victim's browser has been set to something they don't expect. When the SSRF is in use, we make the user session appear that nothing happened; therefore, graphically, in the background, the victim wouldn't understand that any exploitation has happened. This methodology is optimal for a red team operator.
 - Also, as a red team operator, we don’t know if everyone has access to the Redis server, but we see that the web server needs to interact with the backend. SSRF guarantees that our interaction with the Redis server will be a success.
