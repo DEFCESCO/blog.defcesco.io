@@ -31,7 +31,7 @@ At a high level, the web application had three issues. When chained together, I 
 
 ## **Recon & Enumeration: Figuring Out How the Application Works**<a name="recon"></a>
 
-Before downloading the source code and building the Docker image, I conducted recon and enumerate to understand the web application better.
+Before downloading the source code and building the Docker image, I conducted recon and enumeration to understand the web application better.
 
 Based on these initial findings, I concluded that the API was likely only accessible via a local loopback address such as `127.0.0.1`.
 
