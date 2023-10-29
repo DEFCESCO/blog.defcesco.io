@@ -899,4 +899,4 @@ The most interesting aspects I found were researching the Gopher protocol and le
 
 [web_scrapeware.zip](https://github.com/DEFCESCO/blog.defcesco.io/raw/main/_posts/web_scrapeware.zip)
 
-If you like this content, please consider subscribing to [my RSS feed](https://blog.defcesco.io/).
+If you like this content, please consider subscribing to [my RSS feed](https://blog.defcesco.io/feed.xml).
