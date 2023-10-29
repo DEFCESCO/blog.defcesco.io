@@ -1,6 +1,7 @@
 # Setup
 title:               BRIDGEBLOG
 tagline:             bridging nerdy stuff to pursue pleasant elegance
+description:         bridging nerdy stuff to pursue pleasant elegance
 url:                 https://blog.defcesco.io
 analytics_id:        
 
@@ -36,4 +37,8 @@ defaults:
       type: "pages" 
     values:
       layout: "page"
+
+# Plugins
+plugins:
+  - jekyll-feed
       
