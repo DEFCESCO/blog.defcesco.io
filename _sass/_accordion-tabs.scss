@@ -1,6 +1,6 @@
 
 .accordion-tabs { 
-  $action-color: #477dca !default;
+  $action-color: #000000 !default;
   $tab-link-color: $gray-4;
   $tab-border: 1px dashed $border-color;
   $tab-active-background: $body-bg;
@@ -36,7 +36,7 @@
     padding-top: .5rem;
     padding-bottom: .5rem;
     text-decoration: none;
-    opacity: .5;
+    opacity: .8;
     border-top: 0;
     border-bottom: 0;
     display: inline-block;
