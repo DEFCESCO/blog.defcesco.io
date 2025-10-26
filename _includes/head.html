@@ -14,8 +14,11 @@
   <link rel="stylesheet" href="{{ site.baseurl }}/styles.css">
   <link rel="alternate" type="application/atom+xml" title="{{ site.title }}" href="/feed.xml">
   
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{ site.baseurl }}/public/apple-touch-icon-precomposed.png">
-  <link rel="shortcut icon" href="{{ site.baseurl }}/public/favicon.ico">
+  {% assign favicon_version = site.favicon_version | default: '20251026' %}
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="{{ site.baseurl }}/public/apple-touch-icon-precomposed.png?v={{ favicon_version }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ site.baseurl }}/public/favicon-32x32.png?v={{ favicon_version }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ site.baseurl }}/public/favicon-16x16.png?v={{ favicon_version }}">
+  <link rel="shortcut icon" href="{{ site.baseurl }}/public/favicon.ico?v={{ favicon_version }}">
 
   <link href='https://fonts.googleapis.com/css?family=PT+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
 </head>
