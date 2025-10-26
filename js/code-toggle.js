@@ -43,6 +43,15 @@
         }
 
         if (block.classList.contains("highlight")) {
+          if (block.tagName && block.tagName.toLowerCase() === "pre") {
+            return false;
+          }
+
+          const ancestorHighlight = block.parentElement?.closest(".highlight");
+          if (ancestorHighlight && ancestorHighlight !== block) {
+            return false;
+          }
+
           return true;
         }
 
