@@ -19,7 +19,7 @@
 .post-title,
 .post-title a {
   //text-align: center;
-  color: #303030;
+  color: $gray-1;
 }
 .page-title,
 .post-title {
@@ -34,7 +34,7 @@
   display: block;
   padding-top: .75rem;
   padding-bottom: .75rem;
-  color: #9a9a9a;
+  color: rgba($gray-1, 0.65);
   float: left;
 }
 
@@ -50,13 +50,21 @@
   font-size: .8rem;
 
   a { 
-    @include border-radius(5px);
-    border: 1px solid $gray-2;
-    color: inherit;
-    background: #0000;
+    @include border-radius(999px);
+    border: 1px solid rgba($gray-1, 0.2);
+    color: $base-link-color;
+    background: rgba(255, 255, 255, 0.7);
     vertical-align: middle;
     margin-left: .25rem;
-    padding: .25rem;
+    padding: .35rem .75rem;
+    transition: all 0.2s ease;
+
+    &:hover,
+    &:focus {
+      background: rgba($orange, 0.18);
+      border-color: rgba($orange, 0.4);
+      color: $hover-link-color;
+    }
 
   }
 

@@ -8,8 +8,8 @@ analytics_id:
 author:
   name:                Austin A. DeFrancesco
   email:               "austin[@]defcesco[.]io"
-  avatar:              img/avatar.jpg 
-  profile-pic:         img/profile-pic.jpg
+  avatar:              https://defcesco.io/assets/profile.jpg
+  profile-pic:         https://defcesco.io/assets/profile.jpg
 
 
 

@@ -1,21 +1,19 @@
 
 
 .fixed-banner {
-  max-width: $content-width;
-  @include border-radius(3px);
-  @include linear-gradient(to top, $gradient-color, #fff 5%);
-  border-bottom: 2px solid $gray-1;
-  padding-bottom: .75rem;
-  padding-left: .75rem;
-  @include bp-large { padding-left: 1.75rem; }
+  max-width: clamp(20rem, 80vw, $content-width);
+  @include border-radius(16px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(10, 74, 120, 0.16);
+  box-shadow: 0 12px 30px rgba(15, 61, 92, 0.18);
+  padding: clamp(1.1rem, 2.5vh, 1.5rem) clamp(1.25rem, 4vw, 2rem);
   position: fixed;
-  top: 0;
-  left: 3%;
-  right: 3%;
-  margin-left:  auto;
-  margin-right: auto;
-  z-index: 2;
-  overflow:hidden;
+  top: clamp(1rem, 4vh, 2.75rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
 }
 
 
@@ -24,7 +22,7 @@
   letter-spacing: .1rem;
   margin-top: 0;
   margin-bottom: 0;
-  color: $gray-4; 
+  color: $gray-1; 
   @include dim-effect(.85, 1);
 
   a:hover, a:visited {
@@ -34,9 +32,10 @@
   small {
     font-size: 60%;
     font-weight: 400;
-    opacity: .5;
+    opacity: .7;
     letter-spacing: 0;
     vertical-align: middle;
+    color: rgba(10, 74, 120, 0.8);
   }
 }
 
@@ -45,11 +44,13 @@
 
 // added to header on scroll 
 .scroll-nav {
-  @include box-shadow(0 3px 5px -4px $gray-2);
-  transition: all 0.5s;
+  @include box-shadow(0 10px 24px -8px rgba(15, 61, 92, 0.4));
+  transition: all 0.4s ease;
   margin-top: 0;
   padding-bottom: 0;
-  padding-top: 0;
+  padding-top: 0.35rem;
+  backdrop-filter: blur(12px);
+  border-color: rgba(10, 74, 120, 0.22);
 
   .site-title {
     float: left;

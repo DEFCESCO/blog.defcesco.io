@@ -6,7 +6,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: .5rem;
   font-weight: 600;
   line-height: 1.25;
-  color: #313131;
+  color: $gray-1;
   text-rendering: optimizeLegibility;
 }
 
@@ -38,7 +38,7 @@ p {
 }
 
 strong {
-  color: #303030;
+  color: $gray-1;
 }
 
 ul, ol, dl {
@@ -56,10 +56,10 @@ dd {
 
 hr {
   position: relative;
-  margin: 1.5rem 0;
+  margin: 1.75rem 0;
   border: 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #fff;
+  border-top: 1px solid rgba($gray-1, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 abbr {
@@ -75,10 +75,11 @@ abbr {
 }
 
 blockquote {
-  padding: .5rem 1rem;
-  margin: .8rem 0;
-  color: #7a7a7a;
-  border-left: .25rem solid #e5e5e5;
+  padding: .5rem 1.25rem;
+  margin: 1rem 0;
+  color: rgba($gray-1, 0.75);
+  border-left: .25rem solid rgba($gray-1, 0.2);
+  background: rgba(255, 255, 255, 0.6);
 
   p:last-child {
     margin-bottom: 0;

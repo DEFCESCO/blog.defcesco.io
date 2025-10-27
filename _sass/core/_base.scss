@@ -20,7 +20,6 @@ html {
   line-height: $root-line-height;
 
   @include bp-large {
-    color: blue;
     font-size: $large-font-size !important;
   }
 }
@@ -30,6 +29,8 @@ body {
   background-color: $body-bg;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0) 45%);
+  min-height: 100vh;
 
   a {
     color: $base-link-color;

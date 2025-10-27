@@ -1,15 +1,15 @@
 {% if page.footer != 'none' %}
 <footer class="site-footer fade-in" id="footer">
-  <div class="read-next"> Read Next: 
+  <div class="read-next" role="navigation" aria-label="Read next">
+    <span class="read-next__label">Read Next:</span>
     {% if page.previous.url %}
-    <a class="prev-post" href="{{page.previous.url}}">{{page.previous.title}}</a>
-    {% else if page.next.url %}
-    <a class="next-post" href="{{page.next.url}}">{{page.next.title}}</a>
-    {% else %}
+      <a class="prev-post" href="{{page.previous.url}}">{{page.previous.title}}</a>
+    {% elsif page.next.url %}
+      <a class="next-post" href="{{page.next.url}}">{{page.next.title}}</a>
     {% endif %}
   </div>
-    
-  <a href="/" class="back-home">Back Home</a></p> 
+
+  <a href="/" class="back-home">Back Home</a>
 
   <div class="copyright"> 
     <small> &copy; <time datetime="{{ site.time | date_to_xmlschema }}">{{ page.date | date: '%Y' }}</time> {{site.author.name}}</small>

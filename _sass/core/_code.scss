@@ -12,13 +12,15 @@ code {
   padding: .25em .5em;
   font-size: 85%;
   color: $code-color;
-  background-color: #f9f9f9;
-  border-radius: 3px;
+  background-color: rgba($blue, 0.08);
+  border-radius: 6px;
 }
 
 pre {
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: .95rem;
+  line-height: 1.6;
 }
 
 pre code {
@@ -31,11 +33,12 @@ pre code {
 // Pygments via Jekyll
 .highlight {
   padding: 1rem;
-  margin-bottom: 1rem;
-  font-size: .8rem;
-  line-height: 1.4;
-  background-color: #f9f9f9;
-  border-radius: .25rem;
+  margin-bottom: 1.5rem;
+  font-size: .9rem;
+  line-height: 1.55;
+  background-color: rgba($blue, 0.08);
+  border: 1px solid rgba($gray-1, 0.16);
+  border-radius: 12px;
 
   pre {
     margin-bottom: 0;
@@ -52,6 +55,73 @@ pre code {
        -moz-user-select: none;
             user-select: none;
   }
+}
+
+
+.code-toggle {
+  border: 1px solid rgba($gray-1, 0.18);
+  @include border-radius(16px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(15, 61, 92, 0.12);
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.code-toggle__button {
+  width: 100%;
+  background: linear-gradient(135deg, rgba($blue, 0.92), rgba($blue, 0.82));
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+  border: none;
+  padding: .9rem 1.25rem;
+  cursor: pointer;
+  @include border-radius(16px 16px 0 0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+
+  &:focus {
+    outline: 3px solid rgba($orange, 0.35);
+    outline-offset: 2px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, rgba($blue, 0.96), rgba($blue, 0.86));
+    transform: translateY(-1px);
+  }
+
+  &::after {
+    content: '+';
+    font-size: 1.35rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+  }
+
+  &[aria-expanded="true"]::after {
+    transform: rotate(45deg);
+  }
+}
+
+.code-toggle__label {
+  display: inline-flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+.code-toggle__panel {
+  padding: 1.25rem 1.25rem 1.4rem;
+  border-top: 1px solid rgba($gray-1, 0.12);
+  @include border-radius(0 0 16px 16px);
+}
+
+.code-toggle__panel pre {
+  margin-bottom: 0;
+  background: rgba($blue, 0.08);
+  border: 1px solid rgba($gray-1, 0.14);
+  @include border-radius(12px);
+  padding: 1rem 1.1rem;
+  box-shadow: inset 0 1px 2px rgba(15, 61, 92, 0.12);
 }
 
 
