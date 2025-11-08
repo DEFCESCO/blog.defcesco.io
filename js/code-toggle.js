@@ -39,11 +39,13 @@
       const existingToggles = article.querySelectorAll(".code-toggle");
       existingToggles.forEach((toggle) => {
         const panel = toggle.querySelector(".code-toggle__panel");
-        if (panel && panel.children.length > 0) {
-          const block = panel.children[0];
-          toggle.parentNode.insertBefore(block, toggle);
-          toggle.remove();
+        if (panel) {
+          // Move all children of the panel back to the toggle's position
+          while (panel.firstChild) {
+            toggle.parentNode.insertBefore(panel.firstChild, toggle);
+          }
         }
+        toggle.remove();
       });
 
       const blocks = Array.from(
