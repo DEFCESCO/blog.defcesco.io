@@ -35,16 +35,22 @@
     let panelIndex = 0;
 
     articles.forEach((article) => {
-      // Skip articles that have already been processed
-      if (article.hasAttribute("data-code-toggle-processed")) {
-        return;
-      }
+      // Remove any existing code-toggle wrappers to prevent nesting
+      const existingToggles = article.querySelectorAll(".code-toggle");
+      existingToggles.forEach((toggle) => {
+        const panel = toggle.querySelector(".code-toggle__panel");
+        if (panel && panel.children.length > 0) {
+          const block = panel.children[0];
+          toggle.parentNode.insertBefore(block, toggle);
+          toggle.remove();
+        }
+      });
 
       const blocks = Array.from(
         article.querySelectorAll(".highlight, pre")
       ).filter((block) => {
-        // Skip blocks that are already in a code-toggle or marked as processed
-        if (block.closest(".code-toggle") || block.hasAttribute("data-code-toggle-processed")) {
+        // Skip blocks that are already in a code-toggle
+        if (block.closest(".code-toggle")) {
           return false;
         }
 
