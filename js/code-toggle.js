@@ -42,7 +42,11 @@
         if (panel) {
           // Move all children of the panel back to the toggle's position
           while (panel.firstChild) {
-            toggle.parentNode.insertBefore(panel.firstChild, toggle);
+            const child = panel.firstChild;
+            if (child.nodeType === Node.ELEMENT_NODE) {
+              child.removeAttribute("data-code-toggle-processed");
+            }
+            toggle.parentNode.insertBefore(child, toggle);
           }
         }
         toggle.remove();
@@ -51,8 +55,12 @@
       const blocks = Array.from(
         article.querySelectorAll(".highlight, pre")
       ).filter((block) => {
-        // Skip blocks that are already in a code-toggle
+        // Skip blocks that are already in a code-toggle or already processed
         if (block.closest(".code-toggle")) {
+          return false;
+        }
+
+        if (block.hasAttribute("data-code-toggle-processed")) {
           return false;
         }
 
