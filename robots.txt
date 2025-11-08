@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Content signals for AI usage
+# search: yes
+# ai-input: no
+# ai-train: no
+
+Sitemap: https://blog.defcesco.io/sitemap.xml

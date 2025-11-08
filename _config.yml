@@ -3,7 +3,6 @@ title:               BRIDGEBLOG
 tagline:             bridging nerdy stuff to pursue pleasant elegance
 url:                 https://blog.defcesco.io
 analytics_id:        
-favicon_version:     20251026
 
 # About/contact
 author:
@@ -11,6 +10,10 @@ author:
   email:               "austin[@]defcesco[.]io"
   avatar:              https://defcesco.io/assets/profile.jpg
   profile-pic:         https://defcesco.io/assets/profile.jpg
+
+# SEO settings
+twitter_username:    defcesco
+github_username:     defcesco
 
 
 
@@ -41,6 +44,5 @@ defaults:
 # Plugins
 plugins:
   - jekyll-feed
-description:         bridging nerdy stuff to pursue pleasant elegance
-
-      
+  - jekyll-sitemap
+description:         Austin A. DeFrancesco's cybersecurity blog covering detection engineering, vulnerability research, and threat intelligence. Bridging nerdy stuff to pursue pleasant elegance.
