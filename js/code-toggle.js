@@ -52,23 +52,41 @@
         toggle.remove();
       });
 
-      const blocks = Array.from(
+      const candidates = Array.from(
         article.querySelectorAll(".highlight, pre")
-      ).filter((block) => {
-        // Skip blocks that are already in a code-toggle or already processed
-        if (block.closest(".code-toggle")) {
-          return false;
+      );
+
+      if (!candidates.length) {
+        return;
+      }
+
+      const seen = new Set();
+      const blocks = [];
+
+      candidates.forEach((candidate) => {
+        const container =
+          candidate.closest("div[class*='language-']") ||
+          candidate.closest("figure.highlight") ||
+          candidate;
+
+        if (!container) {
+          return;
         }
 
-        if (block.hasAttribute("data-code-toggle-processed")) {
-          return false;
+        if (seen.has(container)) {
+          return;
         }
 
-        if (block.classList.contains("highlight")) {
-          return true;
+        if (container.closest(".code-toggle")) {
+          return;
         }
 
-        return !block.closest(".highlight");
+        if (container.hasAttribute("data-code-toggle-processed")) {
+          return;
+        }
+
+        seen.add(container);
+        blocks.push(container);
       });
 
       if (!blocks.length) {
