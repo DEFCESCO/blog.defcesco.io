@@ -35,10 +35,16 @@
     let panelIndex = 0;
 
     articles.forEach((article) => {
+      // Skip articles that have already been processed
+      if (article.hasAttribute("data-code-toggle-processed")) {
+        return;
+      }
+
       const blocks = Array.from(
         article.querySelectorAll(".highlight, pre")
       ).filter((block) => {
-        if (block.closest(".code-toggle")) {
+        // Skip blocks that are already in a code-toggle or marked as processed
+        if (block.closest(".code-toggle") || block.hasAttribute("data-code-toggle-processed")) {
           return false;
         }
 
@@ -95,7 +101,13 @@
         wrapper.appendChild(button);
         wrapper.appendChild(panel);
         panel.appendChild(block);
+
+        // Mark the block as processed
+        block.setAttribute("data-code-toggle-processed", "true");
       });
+
+      // Mark the article as processed
+      article.setAttribute("data-code-toggle-processed", "true");
     });
   });
 })();
